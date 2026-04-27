@@ -372,7 +372,7 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
             key={currentTextIndex}
             className={cn(
               "flex flex-wrap",
-              splitBy === "lines" && "flex-col w-full"
+              splitBy === "lines" && "w-full flex-col"
             )}
             aria-hidden
             layout
@@ -380,9 +380,9 @@ const TextRotate = forwardRef<TextRotateRef, TextRotateProps>(
             {(splitBy === "characters"
               ? (elements as WordObject[])
               : (elements as string[]).map((el, i) => ({
-                characters: [el],
-                needsSpace: i !== elements.length - 1,
-              }))
+                  characters: [el],
+                  needsSpace: i !== elements.length - 1,
+                }))
             ).map((wordObj, wordIndex, array) => {
               const previousCharsCount = array
                 .slice(0, wordIndex)
