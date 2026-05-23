@@ -113,22 +113,15 @@ Full docs: `docs/GETTING_STARTED.md`, `docs/backend-feature-guide.md`
 
 **Task A1 — Login/Signup UI polish**
 - Files: `LoginPage.tsx`, `LoginForm.tsx`, `SignupPage.tsx`, `SignupForm.tsx`
-- Fix placeholder images, "Acme Inc" text, broken `<a href="#">` links
-- Add form validation (email format, password length, confirm password)
-- Wire to existing `POST /api/login` and `POST /api/register`
-- Successful login/signup redirects to `/dashboard`
+- wire up the signup/login forms 
 
-**Task A2 — Password Reset**
+**Task A2 — Password Reset** (this a full feature , u may just do this only la bghtiti)
 - Frontend: Forgot password page + Reset password page
 - Backend: Add `POST /api/forgot-password` and `POST /api/reset-password` routes + controllers + services
 - `EmailService` already has `sendPasswordReset()` — just wire it up
 - Reference: `packages/api/src/Core/Features/` pattern (same as Reviews, Votes, etc.)
 
-**Task A3 — Email Integration**
-
-- its alreya there , just use it `EmailService`
-
-**Task A4 — Seed Real Data** 
+**Task A3 — Seed Real Data** (u can skip this if u done TASK A2) 
 - Edit `packages/api/bin/seed.php`
 - Add real tools (not "Tool 1", "Tool 2"), real categories, real providers (OpenAI, Anthropic, Google, Meta, etc.), real models (GPT-4o, Claude 3.5, Gemini 2.0, Llama 3, etc.)
 - Make the directory feel populated out of the box
