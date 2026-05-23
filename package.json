@@ -7,6 +7,9 @@
 
     "dev:web": "pnpm --filter @aiocean/web dev",
     "dev:api": "cd packages/api && composer dev",
+    "migrate": "cd packages/api && composer migrate",
+    "rollback": "cd packages/api && composer rollback",
+    "db:seed": "cd packages/api && php bin/seed.php",
     "build": "pnpm --filter @aiocean/web build"
   },
   "devDependencies": {
