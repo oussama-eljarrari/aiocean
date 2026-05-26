@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { useNavigate } from "react-router-dom"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "./ui/field"
+import heroImage from "../assets/ai-ocean.png"
 
 
 export function SignupForm({
@@ -32,7 +33,7 @@ export function SignupForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
-        <CardContent className="grid p-0 md:grid-cols-2">
+        <CardContent className="grid p-0 md:min-h-[520px] md:grid-cols-2">
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
@@ -122,15 +123,22 @@ export function SignupForm({
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="#">Sign up</a>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Log in
+                </button>
               </FieldDescription>
             </FieldGroup>
           </form>
           <div className="relative hidden bg-muted md:block">
             <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              src={heroImage}
+              alt="AI OCEAN"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.4]"
             />
           </div>
         </CardContent>

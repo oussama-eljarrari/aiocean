@@ -93,4 +93,37 @@ final class UserController extends BaseController
 
         return $this->data(['user' => $user->toArray()]);
     }
+
+
+    public function updateMe(Request $request): Response
+    {
+        if (!isset($_SESSION['user_id'])) {
+        return $this->json(['error' => 'Not authenticated'], 401);
+        }
+        $body = $request->body();
+        $name = trim($body['name'] ?? '');
+        $email = trim($body['email'] ?? '');
+        $pfpUrl = isset($body['pfp_url']) ? trim($body['pfp_url']) : null;
+        if (!$name || !$email) {
+            return $this->json(['error' => 'Name and email are required'], 400);
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Invalid email address'], 400);
+        }
+        $result = $this->userService->updateProfile(
+            $_SESSION['user_id'],
+            $name,
+            $email,
+            $pfpUrl ?: null
+        );
+        if (isset($result['error'])) {
+            return $this->json(['error' => $result['error']], 409);
+        }
+        return $this->data([
+            'message' => 'Profile updated',
+            'user' => $result['user']->toArray(),
+        ]);
+    }
+
+
 }

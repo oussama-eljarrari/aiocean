@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { useNavigate } from "react-router-dom"
+import heroImage from "../assets/ai-ocean.png"
 
 export function LoginForm({
   className,
@@ -114,15 +115,22 @@ export function LoginForm({
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="#">Sign up</a>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/signup")}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Sign up
+                </button>
               </FieldDescription>
             </FieldGroup>
           </form>
           <div className="relative hidden bg-muted md:block">
             <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              src={heroImage}
+              alt="AI OCEAN"
+              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.4]"
             />
           </div>
         </CardContent>

@@ -53,4 +53,23 @@ final class UserService
 
         return ['user' => $user];
     }
+
+    public function updateProfile(string $userId, string $name, string $email, ?string $pfpUrl): array
+    {
+        $user = $this->userRepository->findById($userId);
+        if (!$user) {
+            return ['error' => 'User not found'];
+        }
+        if ($this->userRepository->falsemail($email, $userId)) {
+            return ['error' => 'Email already in use'];
+        }
+        $updatedUser = $this->userRepository->updateProfile($userId, $name, $email, $pfpUrl);
+        if (!$updatedUser) {
+            return ['error' => 'Could not update profile'];
+        }
+        return ['user' => $updatedUser];
+    }
+
+
+
 }
