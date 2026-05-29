@@ -10,7 +10,9 @@
     "migrate": "cd packages/api && composer migrate",
     "rollback": "cd packages/api && composer rollback",
     "db:seed": "cd packages/api && php bin/seed.php",
-    "build": "pnpm --filter @aiocean/web build"
+    "build": "pnpm --filter @aiocean/web build",
+    "monitor": "bash scripts/agent-monitor.sh",
+    "dev:agent": "pnpm --filter @aiocean/agent dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

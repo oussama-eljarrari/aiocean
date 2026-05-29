@@ -26,4 +26,6 @@ return [
         'api_key' => $_ENV['RESEND_API_KEY'] ?? '',
         'from'    => $_ENV['RESEND_FROM']    ?? 'AI Ocean <noreply@aiocean.dev>',
     ],
+
+    'agent_webhook_url' => $_ENV['AGENT_WEBHOOK_URL'] ?? 'http://localhost:3001/api/agent/review',
 ];

@@ -15,6 +15,7 @@ final class SubmissionService
         private SubmissionRepository $submissions,
         private UserRepository $users,
         private ?EmailService $emailService = null,
+        private string $agentWebhookUrl = '',
     ) {}
 
     /** @return array{submission?: array, error?: string, status?: int} */
@@ -37,6 +38,14 @@ final class SubmissionService
             'submitted_by' => $userId,
         ]);
         $submission = $this->submissions->createSubmission($toolId, $userId);
+
+        $this->fireAgentWebhook($submission['id'], [
+            'name' => $name,
+            'url' => $body['url'] ?? null,
+            'short_description' => $shortDescription,
+            'description' => $body['description'] ?? null,
+            'pricing_model' => $body['pricing_model'] ?? null,
+        ]);
 
         $user = $this->users->findById($userId);
         if ($user !== null) {
@@ -80,6 +89,28 @@ final class SubmissionService
         }
 
         return ['submission' => $submission];
+    }
+
+    private function fireAgentWebhook(string $submissionId, array $toolData = []): void
+    {
+        if ($this->agentWebhookUrl === '') {
+            return;
+        }
+
+        try {
+            $payload = array_merge(['submission_id' => $submissionId], $toolData);
+            $ctx = stream_context_create([
+                'http' => [
+                    'method'  => 'POST',
+                    'header'  => 'Content-Type: application/json',
+                    'content' => json_encode($payload),
+                    'timeout' => 5,
+                ],
+            ]);
+            @file_get_contents($this->agentWebhookUrl, false, $ctx);
+        } catch (\Throwable) {
+            // Fire-and-forget; do not block the submission flow.
+        }
     }
 
     private function tryEmail(callable $send): void

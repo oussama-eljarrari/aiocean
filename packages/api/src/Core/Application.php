@@ -11,6 +11,9 @@ use App\Core\Middleware\JsonBodyParser;
 use App\Features\Collections\CollectionController;
 use App\Features\Collections\CollectionRepository;
 use App\Features\Collections\CollectionService;
+use App\Features\Agent\AgentController;
+use App\Features\Agent\AgentRepository;
+use App\Features\Agent\AgentService;
 use App\Features\Reports\ReportController;
 use App\Features\Reports\ReportRepository;
 use App\Features\Reports\ReportService;
@@ -117,7 +120,12 @@ final class Application
         $collectionService = new CollectionService($collectionRepo, $toolRepo);
 
         $submissionRepo = new SubmissionRepository($pdo);
-        $submissionService = new SubmissionService($submissionRepo, $userRepo, $emailService);
+        $submissionService = new SubmissionService(
+            $submissionRepo,
+            $userRepo,
+            $emailService,
+            $this->config['agent_webhook_url'] ?? '',
+        );
 
         $this->controllers[ToolController::class] = new ToolController($toolService);
         $this->controllers[UserController::class] = new UserController($userService);
@@ -125,6 +133,10 @@ final class Application
         $this->controllers[VoteController::class] = new VoteController($voteService, $currentUser);
         $this->controllers[ReportController::class] = new ReportController($reportService, $currentUser);
         $this->controllers[CollectionController::class] = new CollectionController($collectionService, $currentUser);
+        $agentRepo = new AgentRepository($pdo);
+        $agentService = new AgentService($agentRepo);
+
+        $this->controllers[AgentController::class] = new AgentController($agentService, $currentUser);
         $this->controllers[SubmissionController::class] = new SubmissionController($submissionService, $currentUser);
     }
 

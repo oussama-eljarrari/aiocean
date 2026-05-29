@@ -3,15 +3,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { useEffect, useState } from "react"
-import { get } from "@/shared/api/client"
-import type { Tool } from "@/components/ToolCard"
+import { useState } from "react"
+import type { Tool } from "@/shared/schema"
 import { ChevronUp, MessageSquare, ThumbsUp, Star, Settings, FileText } from "lucide-react"
 
 export function ToolDetailPage() {
   const { id } = useParams()
   // Mock data for the layout structure since the backend might not have this precise endpoint populated yet.
-  const [tool, setTool] = useState<Tool | null>({
+  const [tool] = useState<Tool | null>({
     id: id || "1",
     name: "Mock AI Data Generator",
     logo: "🤖",
@@ -21,6 +20,8 @@ export function ToolDetailPage() {
     platform: "Web",
     usageCount: 15400,
     rating: 4.8,
+    reviewCount: 94,
+    voteCount: 428,
     primaryUseCase: "Testing & Development",
   })
   

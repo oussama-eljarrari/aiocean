@@ -10,6 +10,7 @@ import { SignUpPage } from "./pages/SignUp"
 import { ProfilePage } from "./pages/ProfilePage"
 
 import { AuthProvider, useAuth } from "./hooks/use-auth"
+import { Toaster } from "./components/ui/sonner"
 
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,7 +41,7 @@ export function App() {
               <ProtectedRoute>
                 <DashboardPage />
               </ProtectedRoute>
-            }/>
+            } />
 
             <Route path="/profile" element={
               <ProtectedRoute>
@@ -49,12 +50,14 @@ export function App() {
             } />
 
           </Route>
-          
+
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
 
         </Routes>
       </AuthProvider>
+      <Toaster />
+
     </BrowserRouter>
   )
 }
