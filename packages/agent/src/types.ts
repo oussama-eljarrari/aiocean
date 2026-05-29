@@ -10,5 +10,4 @@ export interface SubmissionData {
 export interface TodoItem {
   content: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'high' | 'medium' | 'low';
 }

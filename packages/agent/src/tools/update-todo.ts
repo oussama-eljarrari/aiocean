@@ -9,7 +9,6 @@ export function createUpdateTodoTool(onUpdate: (todos: TodoItem[]) => Promise<vo
       todos: z.array(z.object({
         content: z.string(),
         status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-        priority: z.enum(['high', 'medium', 'low']),
       })),
     }),
     execute: async ({ todos }) => {

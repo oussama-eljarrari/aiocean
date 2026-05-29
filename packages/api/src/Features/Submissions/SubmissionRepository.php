@@ -52,9 +52,16 @@ final class SubmissionRepository
     public function findForUser(string $userId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT s.*, t.name AS tool_name, t.status AS tool_status
+            SELECT s.*, t.name AS tool_name, t.status AS tool_status,
+                   t.url AS tool_website, t.short_description AS tool_short_description,
+                   t.description AS tool_description, t.pricing_model AS tool_pricing,
+                   c.name AS tool_category,
+                   u.name AS submitter_name, u.email AS submitter_email
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
+            LEFT JOIN tool_category tc ON tc.tool_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
+            LEFT JOIN users u ON u.id = s.submitted_by
             WHERE s.submitted_by = ?
             ORDER BY s.created_at DESC
         ');
@@ -67,9 +74,16 @@ final class SubmissionRepository
     public function findAll(?string $status = null): array
     {
         $sql = '
-            SELECT s.*, t.name AS tool_name, t.status AS tool_status
+            SELECT s.*, t.name AS tool_name, t.status AS tool_status,
+                   t.url AS tool_website, t.short_description AS tool_short_description,
+                   t.description AS tool_description, t.pricing_model AS tool_pricing,
+                   c.name AS tool_category,
+                   u.name AS submitter_name, u.email AS submitter_email
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
+            LEFT JOIN tool_category tc ON tc.tool_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
+            LEFT JOIN users u ON u.id = s.submitted_by
         ';
         $params = [];
 
@@ -111,9 +125,16 @@ final class SubmissionRepository
     public function findById(string $id): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT s.*, t.name AS tool_name, t.status AS tool_status
+            SELECT s.*, t.name AS tool_name, t.status AS tool_status,
+                   t.url AS tool_website, t.short_description AS tool_short_description,
+                   t.description AS tool_description, t.pricing_model AS tool_pricing,
+                   c.name AS tool_category,
+                   u.name AS submitter_name, u.email AS submitter_email
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
+            LEFT JOIN tool_category tc ON tc.tool_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
+            LEFT JOIN users u ON u.id = s.submitted_by
             WHERE s.id = ?
         ');
         $stmt->execute([$id]);
@@ -149,7 +170,14 @@ final class SubmissionRepository
             'tool_id' => $row['tool_id'],
             'tool_name' => $row['tool_name'],
             'tool_status' => $row['tool_status'],
+            'tool_website' => $row['tool_website'] ?? null,
+            'tool_short_description' => $row['tool_short_description'] ?? null,
+            'tool_description' => $row['tool_description'] ?? null,
+            'tool_pricing' => $row['tool_pricing'] ?? null,
+            'tool_category' => $row['tool_category'] ?? null,
             'submitted_by' => $row['submitted_by'],
+            'submitter_name' => $row['submitter_name'] ?? null,
+            'submitter_email' => $row['submitter_email'] ?? null,
             'status' => $row['status'],
             'admin_notes' => $row['admin_notes'],
             'created_at' => $row['created_at'],

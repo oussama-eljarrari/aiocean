@@ -40,11 +40,11 @@ export async function runAgentReview(submission: SubmissionData) {
   }
 
   const initialTodos: TodoItem[] = [
-    { content: 'Research the tool\'s official website and documentation', status: 'pending', priority: 'high' },
-    { content: 'Search for reviews and discussions about the tool', status: 'pending', priority: 'high' },
-    { content: 'Verify the tool\'s description against available information', status: 'pending', priority: 'high' },
-    { content: 'Check pricing model accuracy', status: 'pending', priority: 'medium' },
-    { content: 'Verify any claims made in the description', status: 'pending', priority: 'medium' },
+    { content: 'Research the tool\'s official website and documentation', status: 'pending' },
+    { content: 'Search for reviews and discussions about the tool', status: 'pending' },
+    { content: 'Verify the tool\'s description against available information', status: 'pending' },
+    { content: 'Check pricing model accuracy', status: 'pending' },
+    { content: 'Verify any claims made in the description', status: 'pending' },
   ]
 
   let currentTodos = [...initialTodos]
@@ -76,7 +76,10 @@ Process Overview:
 5. When all steps are complete, call 'submit_report' to submit your final markdown evaluation.
 
 Initial Todo List:
-${formatTodos(initialTodos)}`
+${formatTodos(initialTodos)}
+
+before u start working and before each step , u need to update the todo list by calling the update_todo tool , this crucially helps the admin understand what are u doing
+`
 
   const messages: ModelMessage[] = [
     {

@@ -5,7 +5,14 @@ export interface Submission {
   tool_id: string
   tool_name: string
   tool_status: string
+  tool_website: string | null
+  tool_short_description: string | null
+  tool_description: string | null
+  tool_pricing: string | null
+  tool_category: string | null
   submitted_by: string
+  submitter_name: string | null
+  submitter_email: string | null
   status: "pending" | "approved" | "rejected"
   admin_notes: string | null
   created_at: string
