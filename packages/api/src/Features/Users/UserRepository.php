@@ -56,4 +56,25 @@ final class UserRepository implements UserRepositoryInterface
             $row['pfp_url'] ?? null
         );
     }
+
+    public function updateProfile(string $id, string $name, string $email, ?string $pfpUrl): ?User
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET name = ?, email = ?, pfp_url = ? WHERE id = ?'
+        );
+        $stmt->execute([$name, $email, $pfpUrl, $id]);
+        return $this->findById($id);
+    }
+
+
+    // not your email !
+    public function falsemail(string $email, string $userId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM users WHERE email = ? AND id != ?'
+        );
+        $stmt->execute([$email, $userId]);
+        return (bool) $stmt->fetch();
+    }
+
 }

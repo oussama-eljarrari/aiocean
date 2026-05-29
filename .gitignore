@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+*.env
 # PHP
 packages/api/vendor/
 packages/api/.env
