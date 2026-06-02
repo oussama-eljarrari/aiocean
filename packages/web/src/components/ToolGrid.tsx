@@ -1,4 +1,4 @@
-import type { Tool } from "./ToolCard"
+import type { Tool } from "../shared/schema"
 import { ToolCard } from "./ToolCard"
 
 interface ToolGridProps {

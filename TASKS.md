@@ -198,7 +198,7 @@ Full docs: `docs/GETTING_STARTED.md`, `docs/backend-feature-guide.md`
 
 
 
-> **Database Migrations** :  If your feature needs a new table (e.g. password reset tokens), create a migration with Phinx (packages/api/vendor/bin/phinx generate YourMigration) and run it with pnpm migrate. Existing migrations are in packages/api/migrations/.
+
 
 ---
 

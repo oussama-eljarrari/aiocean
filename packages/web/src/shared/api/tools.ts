@@ -1,4 +1,4 @@
-import type { Tool, ToolsResponse, GetToolsParams } from "../schema"
+import type { ToolsResponse, GetToolsParams } from "../schema"
 import { get } from "./client"
 export type { Tool, ToolsResponse, GetToolsParams } from "../schema"
 

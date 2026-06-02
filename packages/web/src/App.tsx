@@ -3,8 +3,10 @@ import { MainLayout } from "./layouts/MainLayout"
 
 
 import { HomePage } from "./pages/HomePage"
+import { LandingPage } from "./pages/LandingPage"
 import { LoginPage } from "./pages/LoginPage"
 import { DashboardPage } from "./pages/DashboardPage"
+import { AdminPage } from "./pages/AdminPage"
 import { ToolDetailPage } from "./pages/ToolDetailPage"
 import { SignUpPage } from "./pages/SignUp"
 import { ProfilePage } from "./pages/ProfilePage"
@@ -27,6 +29,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (user.role !== "admin") {
+    return <Navigate to="/home" replace />
+  }
+
+  return <>{children}</>
+}
+
 export function App() {
   return (
     <BrowserRouter>
@@ -34,13 +54,24 @@ export function App() {
         <Routes>
           <Route element={<MainLayout />}>
 
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/home" element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            } />
             <Route path="/tools/:id" element={<ToolDetailPage />} />
 
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <DashboardPage />
-              </ProtectedRoute>
+              </AdminRoute>
+            } />
+
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
             } />
 
             <Route path="/profile" element={
