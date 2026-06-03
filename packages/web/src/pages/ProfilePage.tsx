@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/use-auth"
 import { updateMe } from "@/shared/api/users"
+import { getCollections, type Collection } from "@/shared/api/collections"
+import { getMySubmissions, type Submission } from "@/shared/api/submissions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -15,7 +20,8 @@ import {
 } from "@/components/ui/dialog"
 
 export function ProfilePage() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, logout } = useAuth()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 
   const [name, setName] = useState("")
@@ -23,6 +29,52 @@ export function ProfilePage() {
   const [pfpUrl, setPfpUrl] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [loadingCollections, setLoadingCollections] = useState(true)
+  const [loadingSubmissions, setLoadingSubmissions] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadData() {
+      setLoadingCollections(true)
+      setLoadingSubmissions(true)
+      setDataError(null)
+
+      try {
+        const [collectionsResult, submissionsResult] = await Promise.all([
+          getCollections(),
+          getMySubmissions(),
+        ])
+
+        if (!cancelled) {
+          setCollections(collectionsResult)
+          setSubmissions(submissionsResult)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setDataError(err instanceof Error ? err.message : "Failed to load dashboard data")
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCollections(false)
+          setLoadingSubmissions(false)
+        }
+      }
+    }
+
+    loadData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   const openEdit = () => {
     setName(user?.name ?? "")
@@ -50,16 +102,21 @@ export function ProfilePage() {
 
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "?"
 
   const displayName = user?.name ?? "Unknown user"
   const displayEmail = user?.email ?? "No email"
   const displayRole = user?.role ?? "member"
+
+  const handleLogout = async () => {
+    await logout()
+    navigate("/")
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -90,6 +147,9 @@ export function ProfilePage() {
           <CardContent className="space-y-3">
             <Button className="w-full" onClick={openEdit}>
               Edit profile
+            </Button>
+            <Button className="w-full" variant="outline" onClick={() => void handleLogout()}>
+              Logout
             </Button>
           </CardContent>
         </Card>
@@ -134,6 +194,93 @@ export function ProfilePage() {
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>Keep your profile up to date so teammates can recognize you.</p>
               <p>Use a clear avatar image for faster identification.</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <CardTitle>My workspace</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Track your saved collections and submissions.
+                </p>
+              </div>
+              <Button onClick={() => navigate("/?submit=true")}>Submit a Tool</Button>
+            </CardHeader>
+            <CardContent>
+              {dataError && (
+                <p className="mb-4 text-sm font-medium text-destructive">{dataError}</p>
+              )}
+              <Tabs defaultValue="collections">
+                <TabsList variant="line">
+                  <TabsTrigger value="collections">Saved collections</TabsTrigger>
+                  <TabsTrigger value="submissions">My submissions</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="collections" className="mt-4">
+                  {loadingCollections ? (
+                    <p className="text-sm text-muted-foreground">Loading collections...</p>
+                  ) : collections.length === 0 ? (
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>No collections yet.</p>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => navigate("/collections")}
+                        className="px-0"
+                      >
+                        Create Collection
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {collections.map((collection) => (
+                        <div
+                          key={collection.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/10 px-3 py-2"
+                        >
+                          <div>
+                            <p className="font-medium">{collection.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {collection.tool_count} tools
+                            </p>
+                          </div>
+                          <Badge variant={collection.is_public ? "secondary" : "outline"}>
+                            {collection.is_public ? "Public" : "Private"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="submissions" className="mt-4">
+                  {loadingSubmissions ? (
+                    <p className="text-sm text-muted-foreground">Loading submissions...</p>
+                  ) : submissions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No submissions yet.</p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {submissions.map((submission) => (
+                        <div
+                          key={submission.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/10 px-3 py-2"
+                        >
+                          <div>
+                            <p className="font-medium">{submission.tool_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Submitted {new Date(submission.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge variant={submission.status === "pending" ? "secondary" : "outline"}>
+                            {submission.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
