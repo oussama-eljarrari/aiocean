@@ -67,7 +67,12 @@ final class UserRepository implements UserRepositoryInterface
     }
 
 
-    // not your email !
+    public function updatePassword(string $id, string $passHash): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET pass_hash = ? WHERE id = ?');
+        $stmt->execute([$passHash, $id]);
+    }
+
     public function falsemail(string $email, string $userId): bool
     {
         $stmt = $this->pdo->prepare(

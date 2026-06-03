@@ -10,6 +10,8 @@ import { AdminPage } from "./pages/AdminPage"
 import { ToolDetailPage } from "./pages/ToolDetailPage"
 import { SignUpPage } from "./pages/SignUp"
 import { ProfilePage } from "./pages/ProfilePage"
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage"
+import { ResetPasswordPage } from "./pages/ResetPasswordPage"
 
 import { AuthProvider, useAuth } from "./hooks/use-auth"
 import { Toaster } from "./components/ui/sonner"
@@ -84,6 +86,8 @@ export function App() {
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         </Routes>
       </AuthProvider>
