@@ -1,6 +1,11 @@
 
 # MCP integration Nots:
 
+- **HIGH** : redesin the intenral auth commication ,agent --> api , mcp tools --> api ect , the facing mcp uses oauth  but it now to intenral auth with the backend /api ites mess ,uing some hmac hackish thing , not sure How we should do this , Mybe just pass throght that same oauth tken from the oauth flow ?
+
+
+
+
 - the mcp tools gonan be just wrapperes on the endpoints that we alreay have on our api/php
 - the agent also has a bunchf ot tools see of we can unfiy those at a registry (and maybe exporse the whole agent capabitles as an mcp not the todo maybe , for rearch , but at least he genral tools (that interacte with the system , list/get/decide/report ect shoudl be abstracted somewhow))
 - the auth questiosn is stil on the able we need oauth implemented to be able the agent/mcp to connect to our server seampless

@@ -5,6 +5,7 @@ const API_BASE = config.phpApiBaseUrl
 const INTERNAL_SHARED_SECRET = config.internalSharedSecret
 
 export type ApiInit = RequestInit & { headers?: Record<string, string> }
+// redesign internal auth : : add jwt token to the request header and remove the shared secret
 
 export function getInternalAuthHeaders(
   method: string,
