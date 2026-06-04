@@ -6,23 +6,32 @@ import {
   updateAgentTodo,
   saveAgentMessages,
   saveAgentReport,
-} from './php-client.js'
-import { SubmissionData, TodoItem } from './types.js'
-import { fetchPageTool } from './tools/fetch-page.js'
-import { webSearchTool } from './tools/web-search.js'
-import { createUpdateTodoTool } from './tools/update-todo.js'
-import { createSubmitReportTool } from './tools/submit-report.js'
+} from '../client'
+import { SubmissionData, TodoItem } from '../types'
+import {
+  fetchPageTool,
+  webSearchTool,
+  createUpdateTodoTool,
+  createSubmitReportTool,
+} from './tools'
 import { devToolsMiddleware } from "@ai-sdk/devtools";
+import { config } from '../config'
+
 const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: config.openRouterApiKey,
 })
 const model = wrapLanguageModel(
   {
-    model: openrouter('nvidia/nemotron-3-super-120b-a12b:free'),
+    model: openrouter('nvidia/nemotron-3-super-120b-a12b:free', {
+      extraBody: {
+        reasoning: {
+          max_tokens: 0,
+        },
+      }
+    }),
     middleware: devToolsMiddleware()
   }
 )
-// const model = openrouter('nvidia/nemotron-3-super-120b-a12b:free')
 
 function formatTodos(todos: TodoItem[]): string {
   return todos.map((t, i) => `${i + 1}. [${t.status}] ${t.content}`).join('\n')
@@ -55,11 +64,11 @@ export async function runAgentReview(submission: SubmissionData) {
   const tools = {
     search_web: webSearchTool,
     fetch_page: fetchPageTool,
-    update_todo: createUpdateTodoTool(async (todos) => {
+    update_todo: createUpdateTodoTool(async (todos: TodoItem[]) => {
       currentTodos = todos
       await updateAgentTodo(runId, currentTodos)
     }),
-    submit_report: createSubmitReportTool(async (finalReport) => {
+    submit_report: createSubmitReportTool(async (finalReport: string) => {
       report = finalReport
       await saveAgentReport(runId, report)
     })

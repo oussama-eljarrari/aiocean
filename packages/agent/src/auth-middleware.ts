@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises'
 import type { MiddlewareHandler } from 'hono'
 import * as jose from 'jose'
 
@@ -11,26 +10,25 @@ export type AuthConfig = {
   resourceMetadataUrl: string
   /** Required scopes, advertised in 401 responses */
   requiredScopes: string[]
-  /** Path to the AS public key (PEM, SPKI) used to verify RS256 JWTs */
-  publicKeyPath: string
+  /** Public key PEM string (SPKI) used to verify RS256 JWTs */
+  publicKeyPem: string
 }
 
-type AuthInfo = {
+export type AuthInfo = {
   token: string
   payload: jose.JWTPayload
 }
 
-declare module 'hono' {
-  interface ContextVariableMap {
+export type AppEnv = {
+  Variables: {
     auth: AuthInfo
   }
 }
 
 let cachedKey: CryptoKey | undefined
 
-async function getPublicKey(path: string): Promise<CryptoKey> {
+async function getPublicKey(pem: string): Promise<CryptoKey> {
   if (cachedKey) return cachedKey
-  const pem = await readFile(path, 'utf8')
   cachedKey = await jose.importSPKI(pem, 'RS256')
   return cachedKey
 }
@@ -52,7 +50,7 @@ function challenge(config: AuthConfig, error: string, description: string): stri
  *   RFC 9728 protected-resource metadata document
  * - Valid token → JWT payload is exposed on the Hono context as `c.get('auth')`
  */
-export function createAuthMiddleware(config: AuthConfig): MiddlewareHandler {
+export function createAuthMiddleware(config: AuthConfig): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const header = c.req.header('Authorization')
     if (!header || !header.toLowerCase().startsWith('bearer ')) {
@@ -70,7 +68,7 @@ export function createAuthMiddleware(config: AuthConfig): MiddlewareHandler {
 
     const token = header.slice(7).trim()
     try {
-      const key = await getPublicKey(config.publicKeyPath)
+      const key = await getPublicKey(config.publicKeyPem)
       const { payload } = await jose.jwtVerify(token, key, {
         issuer: config.issuer,
         audience: config.audience,

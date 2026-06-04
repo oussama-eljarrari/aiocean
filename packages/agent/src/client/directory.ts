@@ -1,83 +1,4 @@
-import crypto from 'crypto'
-
-const API_BASE = process.env.PHP_API_BASE_URL || 'http://localhost:8080'
-const INTERNAL_SHARED_SECRET = process.env.INTERNAL_SHARED_SECRET || ''
-
-type ApiInit = RequestInit & { headers?: Record<string, string> }
-
-function getInternalAuthHeaders(method: string, path: string, userId: string, isAdmin: boolean): Record<string, string> {
-  if (!INTERNAL_SHARED_SECRET || !userId) {
-    return {}
-  }
-  const timestamp = Math.floor(Date.now() / 1000).toString()
-  const adminVal = isAdmin ? '1' : '0'
-  const message = `${timestamp}:${method.toUpperCase()}:${path}:${userId}:${adminVal}`
-  const signature = crypto
-    .createHmac('sha256', INTERNAL_SHARED_SECRET)
-    .update(message)
-    .digest('hex')
-
-  return {
-    'X-Internal-Admin': adminVal,
-    'X-Internal-User-Id': userId,
-    'X-Internal-Timestamp': timestamp,
-    'X-Internal-Signature': signature,
-  }
-}
-
-async function apiFetch<T = unknown>(path: string, options: ApiInit = {}): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
-  })
-  if (!res.ok) {
-    console.error(`API error: ${res.status} ${res.statusText} for ${path}`)
-  }
-  try {
-    return (await res.json()) as T
-  } catch {
-    return null
-  }
-}
-
-// --- Agent run state (called by the review agent) ---
-
-export function createAgentRun(submissionId: string) {
-  return apiFetch<{ data: { id: string } }>('/api/agent/runs', {
-    method: 'POST',
-    body: JSON.stringify({ submission_id: submissionId }),
-  })
-}
-
-export function updateAgentStatus(runId: string, status: string) {
-  return apiFetch(`/api/agent/runs/${runId}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  })
-}
-
-export function updateAgentTodo(runId: string, todos: unknown) {
-  return apiFetch(`/api/agent/runs/${runId}/todo`, {
-    method: 'PATCH',
-    body: JSON.stringify({ todos }),
-  })
-}
-
-export function saveAgentMessages(runId: string, messages: unknown) {
-  return apiFetch(`/api/agent/runs/${runId}/messages`, {
-    method: 'PATCH',
-    body: JSON.stringify({ messages }),
-  })
-}
-
-export function saveAgentReport(runId: string, report: string) {
-  return apiFetch(`/api/agent/runs/${runId}/report`, {
-    method: 'PATCH',
-    body: JSON.stringify({ report }),
-  })
-}
-
-// --- Tools directory (exposed via MCP) ---
+import { apiFetch, getInternalAuthHeaders } from './base'
 
 export type Tool = {
   id: string
@@ -123,8 +44,6 @@ export async function listAioceanCategories(): Promise<string[] | null> {
   const result = await apiFetch<{ data: { categories: string[] } }>('/api/categories')
   return result?.data?.categories ?? null
 }
-
-// --- Submissions ---
 
 export type Submission = {
   id: string
