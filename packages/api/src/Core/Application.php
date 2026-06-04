@@ -33,6 +33,9 @@ use App\Features\Votes\VoteService;
 use App\Features\Users\UserController;
 use App\Features\Users\UserRepository;
 use App\Features\Users\UserService;
+use App\Features\PasswordReset\PasswordResetController;
+use App\Features\PasswordReset\PasswordResetRepository;
+use App\Features\PasswordReset\PasswordResetService;
 use App\Shared\EmailService;
 use App\Shared\CurrentUser;
 use PDO;
@@ -137,6 +140,15 @@ final class Application
         $agentService = new AgentService($agentRepo);
 
         $this->controllers[AgentController::class] = new AgentController($agentService, $currentUser);
+        $passwordResetRepo = new PasswordResetRepository($pdo);
+        $passwordResetService = new PasswordResetService(
+            $passwordResetRepo,
+            $userRepo,
+            $emailService,
+            $this->config['cors_origin'] ?? 'http://localhost:5173',
+        );
+        $this->controllers[PasswordResetController::class] = new PasswordResetController($passwordResetService);
+
         $this->controllers[SubmissionController::class] = new SubmissionController($submissionService, $currentUser);
     }
 

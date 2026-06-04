@@ -12,4 +12,5 @@ interface UserRepositoryInterface
     public function emailExists(string $email): bool;
     public function updateProfile(string $id, string $name, string $email, ?string $pfpUrl): ?User;
     public function falsemail(string $email, string $userId): bool;
+    public function updatePassword(string $id, string $passHash): void;
 }
