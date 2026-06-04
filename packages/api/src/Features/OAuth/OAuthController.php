@@ -51,7 +51,7 @@ final class OAuthController extends BaseController
             'issuer'                                      => $issuer,
             'authorization_endpoint'                      => $frontendUrl . '/authorize',
             'token_endpoint'                              => $issuer . '/token',
-            'registration_endpoint'                       => $issuer . '/register',
+            'registration_endpoint'                       => $issuer . '/api/oauth/register',
             'response_types_supported'                    => ['code'],
             'grant_types_supported'                       => ['authorization_code', 'refresh_token'],
             'code_challenge_methods_supported'            => ['S256'],
