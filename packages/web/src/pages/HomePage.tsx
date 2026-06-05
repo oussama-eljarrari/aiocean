@@ -167,14 +167,14 @@ export function HomePage() {
                 <div className="flex flex-wrap gap-2">
                   {displayedCategories.map((cat) => (
                     <Button
-                      key={cat}
-                      variant={activeCategory === cat ? "secondary" : "ghost"}
+                      key={cat.id}
+                      variant={activeCategory === cat.name ? "secondary" : "ghost"}
                       size="sm"
-                      onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                      onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
                       className="rounded-full text-sm"
                     >
-                      {cat}
-                      {activeCategory === cat && <X className="ml-1 size-3" />}
+                      {cat.name}
+                      {activeCategory === cat.name && <X className="ml-1 size-3" />}
                     </Button>
                   ))}
                   {categories.length > 3 && (

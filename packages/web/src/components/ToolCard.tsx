@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star } from "lucide-react"
+import { Star, ChevronUp } from "lucide-react"
 import { Link } from "react-router-dom"
 import type { Tool } from "../shared/schema"
 
@@ -15,12 +15,10 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ tool }: ToolCardProps) {
-  // Format usage count (e.g. 1500 -> 1.5k)
   const formatUsage = (num: number) => {
     return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num.toString()
   }
 
-  // Get badge variant for pricing
   const getPricingVariant = (pricing: string) => {
     switch (pricing) {
       case "Free":
@@ -52,6 +50,10 @@ export function ToolCard({ tool }: ToolCardProps) {
                 <span>Used by {formatUsage(tool.usageCount)}</span>
               </div>
             </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <ChevronUp className="size-3.5" />
+            <span>{tool.voteCount}</span>
           </div>
         </div>
       </CardHeader>

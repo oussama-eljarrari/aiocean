@@ -3,41 +3,129 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { Tool } from "@/shared/schema"
-import { ChevronUp, MessageSquare, ThumbsUp, Star, Settings, FileText } from "lucide-react"
+import { getTool } from "@/shared/api/tools"
+import { toggleVote } from "@/shared/api/votes"
+import { getReviews, type Review } from "@/shared/api/reviews"
+import { ChevronUp, Star, Bookmark, Loader2, ExternalLink } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { useNavigate } from "react-router-dom"
+import { SaveToCollectionDialog } from "@/components/SaveToCollectionDialog"
+import { ReviewDialog } from "@/components/ReviewDialog"
 
 export function ToolDetailPage() {
   const { id } = useParams()
-  // Mock data for the layout structure since the backend might not have this precise endpoint populated yet.
-  const [tool] = useState<Tool | null>({
-    id: id || "1",
-    name: "Mock AI Data Generator",
-    logo: "🤖",
-    tagline: "Generate realistic mock data using advanced GPT models in seconds.",
-    category: "Productivity",
-    pricing: "Freemium",
-    platform: "Web",
-    usageCount: 15400,
-    rating: 4.8,
-    reviewCount: 94,
-    voteCount: 428,
-    primaryUseCase: "Testing & Development",
-  })
-  
-  const [upvotes, setUpvotes] = useState(428)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const [tool, setTool] = useState<Tool | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [voteCount, setVoteCount] = useState(0)
   const [hasUpvoted, setHasUpvoted] = useState(false)
+  const [voting, setVoting] = useState(false)
 
-  // In reality, we'd fetch this from via our get<Tool>(`/tools/${id}`)
-  // useEffect(() => { get(`/tools/${id}`).then(setTool) }, [id])
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loadingReviews, setLoadingReviews] = useState(true)
 
-  if (!tool) {
-    return <div className="p-8 text-center">Loading...</div>
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      try {
+        const t = await getTool(id!)
+        if (!cancelled) {
+          setTool(t)
+          setVoteCount(t.voteCount)
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load tool")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+
+    async function load() {
+      setLoadingReviews(true)
+      try {
+        const r = await getReviews(id!)
+        if (!cancelled) setReviews(r)
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoadingReviews(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [id])
+
+  const handleUpvote = async () => {
+    if (!user) {
+      navigate("/login")
+      return
+    }
+    if (!id || voting) return
+    setVoting(true)
+    try {
+      const result = await toggleVote(id)
+      setHasUpvoted(result.voted)
+      setVoteCount(result.count)
+    } catch {
+      // ignore
+    } finally {
+      setVoting(false)
+    }
   }
 
-  const handleUpvote = () => {
-    setHasUpvoted(!hasUpvoted)
-    setUpvotes((prev) => hasUpvoted ? prev - 1 : prev + 1)
+  const handleReviewSuccess = async () => {
+    if (!id) return
+    try {
+      const [r, t] = await Promise.all([getReviews(id), getTool(id)])
+      setReviews(r)
+      setTool(t)
+    } catch {
+      // ignore
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error || !tool) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-24 text-center">
+        <h2 className="text-xl font-semibold text-destructive">Tool not found</h2>
+        <p className="mt-2 text-muted-foreground">{error || "The tool you're looking for doesn't exist."}</p>
+        <Button className="mt-6" onClick={() => navigate("/home")}>Browse tools</Button>
+      </div>
+    )
+  }
+
+  const formatCount = (num: number) => {
+    return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num.toString()
   }
 
   return (
@@ -60,18 +148,38 @@ export function ToolDetailPage() {
         </div>
 
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col">
-          <Button size="lg" className="w-full md:w-auto font-semibold">
-            Visit Website
-          </Button>
-          <Button 
-            size="lg" 
-            variant={hasUpvoted ? "default" : "secondary"} 
-            className="w-full md:w-auto flex gap-2" 
-            onClick={handleUpvote}
+          {tool.url && (
+            <Button
+              size="lg"
+              className="w-full md:w-auto font-semibold"
+              onClick={() => window.open(tool.url!, "_blank", "noopener noreferrer")}
+            >
+              <ExternalLink className="mr-2 size-4" />
+              Visit Website
+            </Button>
+          )}
+          <Button
+            size="lg"
+            variant={hasUpvoted ? "default" : "secondary"}
+            className="w-full md:w-auto flex gap-2"
+            onClick={() => void handleUpvote()}
+            disabled={voting}
           >
-            <ChevronUp className="h-5 w-5" />
+            <ChevronUp className={`h-5 w-5 ${hasUpvoted ? "animate-bounce" : ""}`} />
             <span>{hasUpvoted ? "Upvoted" : "Upvote"}</span>
-            <span className="opacity-70">({upvotes})</span>
+            <span className="opacity-70">({voteCount})</span>
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full md:w-auto flex gap-2"
+            onClick={() => {
+              if (!user) { navigate("/login"); return }
+              setSaveDialogOpen(true)
+            }}
+          >
+            <Bookmark className="h-5 w-5" />
+            Save
           </Button>
         </div>
       </div>
@@ -84,80 +192,70 @@ export function ToolDetailPage() {
         <div className="md:col-span-2 space-y-8">
           <section>
             <h2 className="text-xl font-semibold mb-4">About</h2>
-            <p className="leading-relaxed text-muted-foreground">
-              {tool.name} is a state-of-the-art solution designed for {tool.primaryUseCase}. 
-              It allows users to streamline their workflow by integrating powerful AI-driven capabilities directly into their day-to-day operations. Whether you're working on a small side project or a large-scale enterprise application, our API provides robust and reliable results.
+            <p className="leading-relaxed text-muted-foreground whitespace-pre-wrap">
+              {tool.description || tool.tagline || "No description available."}
             </p>
           </section>
 
           <Separator />
 
-          {/* Placeholders for Community Primitives */}
           <section>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Reviews & Comments</h2>
-              <Button variant="outline" size="sm">Write a Review</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (!user) { navigate("/login"); return }
+                setReviewDialogOpen(true)
+              }}>
+                Write a Review
+              </Button>
             </div>
 
-            <div className="space-y-6">
-              {/* Dummy Review 1 */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">JD</div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">Jane Doe</CardTitle>
-                        <CardDescription className="text-xs">2 days ago</CardDescription>
+            {loadingReviews ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <p>No reviews yet. Be the first to review this tool!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {reviews.map((review) => (
+                  <Card key={review.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-xs">
+                            {review.author.name
+                              ? review.author.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+                              : "?"}
+                          </div>
+                          <div>
+                            <CardTitle className="text-sm font-medium">{review.author.name}</CardTitle>
+                            <CardDescription className="text-xs">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex text-amber-500">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${
+                                star <= review.rating ? "fill-current" : "text-muted-foreground/30"
+                              }`}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex text-amber-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/90">This tool completely changed the way I build out my staging environments. The AI generates shockingly realistic user flows.</p>
-                  <div className="mt-4 flex items-center gap-4 text-xs font-medium text-muted-foreground">
-                    <button className="hover:text-primary flex gap-1.5 items-center"><ThumbsUp className="h-3.5 w-3.5" /> 12 Helpful</button>
-                    <button className="hover:text-primary flex gap-1.5 items-center"><MessageSquare className="h-3.5 w-3.5" /> Reply</button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Dummy Review 2 */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center font-bold text-blue-500">MC</div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">Mike Chen</CardTitle>
-                        <CardDescription className="text-xs">1 week ago</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex text-amber-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/90">Very good for the most part, but I wish the free tier allowed a few more API calls per minute.</p>
-                  <div className="mt-4 flex items-center gap-4 text-xs font-medium text-muted-foreground">
-                    <button className="hover:text-primary flex gap-1.5 items-center"><ThumbsUp className="h-3.5 w-3.5" /> 4 Helpful</button>
-                    <button className="hover:text-primary flex gap-1.5 items-center"><MessageSquare className="h-3.5 w-3.5" /> 1 Reply</button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground/90">{review.comment}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </section>
         </div>
 
@@ -169,12 +267,22 @@ export function ToolDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="flex justify-between items-center">
-                 <span className="text-sm text-muted-foreground">Overall Rating</span>
-                 <span className="font-semibold flex items-center gap-1.5">{tool.rating} <Star className="h-4 w-4 fill-amber-500 text-amber-500" /></span>
+                 <span className="text-sm text-muted-foreground">Rating</span>
+                 <span className="font-semibold flex items-center gap-1.5">
+                   {tool.rating.toFixed(1)} <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                 </span>
                </div>
                <div className="flex justify-between items-center">
-                 <span className="text-sm text-muted-foreground">Total Users</span>
-                 <span className="font-semibold">{tool.usageCount.toLocaleString()}</span>
+                 <span className="text-sm text-muted-foreground">Reviews</span>
+                 <span className="font-semibold">{tool.reviewCount}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-sm text-muted-foreground">Upvotes</span>
+                 <span className="font-semibold">{voteCount}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-sm text-muted-foreground">Users</span>
+                 <span className="font-semibold">{formatCount(tool.usageCount)}</span>
                </div>
                <div className="flex justify-between items-center">
                  <span className="text-sm text-muted-foreground">Pricing</span>
@@ -182,35 +290,23 @@ export function ToolDetailPage() {
                </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">Similar Tools</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               {/* Placeholders for similar tools */}
-               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground">
-                   <Settings className="h-5 w-5" />
-                 </div>
-                 <div>
-                   <p className="text-sm font-medium">DevSprint API</p>
-                   <p className="text-xs text-muted-foreground">Coding</p>
-                 </div>
-               </div>
-               <div className="flex items-center gap-3">
-                 <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground">
-                   <FileText className="h-5 w-5" />
-                 </div>
-                 <div>
-                   <p className="text-sm font-medium">WriteSmart</p>
-                   <p className="text-xs text-muted-foreground">Writing</p>
-                 </div>
-               </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
+      <SaveToCollectionDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        toolId={tool.id}
+        toolName={tool.name}
+      />
+
+      <ReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        toolId={tool.id}
+        toolName={tool.name}
+        onSuccess={() => void handleReviewSuccess()}
+      />
     </div>
   )
 }

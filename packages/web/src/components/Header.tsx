@@ -29,7 +29,7 @@ export function Header() {
             Browse
           </Link>
           <Link
-            to="/home?submit=true"
+            to="/submit"
             className="text-foreground/80 transition-colors hover:text-primary"
           >
             Submit Tool

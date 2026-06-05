@@ -58,7 +58,7 @@ final class ToolService
     /**
      * Get all available categories.
      *
-     * @return string[]
+     * @return array<int, array{id: string, name: string}>
      */
     public function categories(): array
     {

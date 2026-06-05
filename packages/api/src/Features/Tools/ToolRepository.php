@@ -120,11 +120,11 @@ final class ToolRepository implements ToolRepositoryInterface, ToolLookupInterfa
         );
     }
 
-    /** @return string[] */
+    /** @return array<int, array{id: string, name: string}> */
     public function categories(): array
     {
-        $stmt = $this->pdo->query("SELECT name FROM categories ORDER BY name");
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $stmt = $this->pdo->query("SELECT id, name FROM categories ORDER BY name");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private function hydrate(array $row): Tool

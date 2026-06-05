@@ -10,6 +10,7 @@ import { AdminPage } from "./pages/AdminPage"
 import { ToolDetailPage } from "./pages/ToolDetailPage"
 import { SignUpPage } from "./pages/SignUp"
 import { ProfilePage } from "./pages/ProfilePage"
+import { SubmitToolPage } from "./pages/SubmitToolPage"
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage"
 import { ResetPasswordPage } from "./pages/ResetPasswordPage"
 
@@ -79,6 +80,12 @@ export function App() {
             <Route path="/profile" element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/submit" element={
+              <ProtectedRoute>
+                <SubmitToolPage />
               </ProtectedRoute>
             } />
 

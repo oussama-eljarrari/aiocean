@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { getTools, type ToolsResponse } from "../shared/api/tools"
+import type { Category } from "../shared/schema"
 
 export type SortBy = "featured" | "most-upvoted" | "highest-rated" | "most-popular" | "name-asc"
 
@@ -23,8 +24,8 @@ export interface UseToolsReturn {
   loading: boolean
   error: string | null
   tools: ToolsResponse["tools"]
-  categories: ToolsResponse["categories"]
-  displayedCategories: string[]
+  categories: Category[]
+  displayedCategories: Category[]
   pricingOptions: string[]
   platformOptions: string[]
   ratingOptions: { label: string; value: string }[]
@@ -72,8 +73,9 @@ export function useTools(initialPanelOpen = true): UseToolsReturn {
   }, [searchQuery, activeCategory])
 
   const tools = data?.tools ?? []
-  const categories = data?.categories ?? []
-  const displayedCategories = filtersExpanded ? categories : categories.slice(0, 3)
+  const allCategories: Category[] = data?.categories ?? []
+  const categories = allCategories
+  const displayedCategories = filtersExpanded ? allCategories : allCategories.slice(0, 3)
 
   const pricingOptions = useMemo(
     () => Array.from(new Set(tools.map((tool) => tool.pricing).filter(Boolean))).sort(),

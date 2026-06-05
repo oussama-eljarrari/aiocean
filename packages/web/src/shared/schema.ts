@@ -24,10 +24,15 @@ export interface User {
   pfp_url: string | null
 }
 
+export interface Category {
+  id: string
+  name: string
+}
+
 export interface ToolsResponse {
   tools: Tool[]
   total: number
-  categories: string[]
+  categories: Category[]
 }
 
 export interface GetToolsParams {

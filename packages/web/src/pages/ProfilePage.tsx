@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/use-auth"
 import { updateMe } from "@/shared/api/users"
-import { getCollections, type Collection } from "@/shared/api/collections"
+import { getCollections, createCollection, deleteCollection, type Collection } from "@/shared/api/collections"
 import { getMySubmissions, type Submission } from "@/shared/api/submissions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Loader2, Plus, Trash2, BookmarkCheck } from "lucide-react"
 
 export function ProfilePage() {
   const { user, refreshUser, logout } = useAuth()
@@ -35,45 +36,34 @@ export function ProfilePage() {
   const [loadingSubmissions, setLoadingSubmissions] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
 
+  const [newCollectionName, setNewCollectionName] = useState("")
+  const [creatingCollection, setCreatingCollection] = useState(false)
+
+  const loadData = () => {
+    if (!user) return
+    setLoadingCollections(true)
+    setLoadingSubmissions(true)
+    setDataError(null)
+
+    Promise.all([
+      getCollections(),
+      getMySubmissions(),
+    ])
+      .then(([collectionsResult, submissionsResult]) => {
+        setCollections(collectionsResult)
+        setSubmissions(submissionsResult)
+      })
+      .catch((err) => {
+        setDataError(err instanceof Error ? err.message : "Failed to load dashboard data")
+      })
+      .finally(() => {
+        setLoadingCollections(false)
+        setLoadingSubmissions(false)
+      })
+  }
+
   useEffect(() => {
-    if (!user) {
-      return
-    }
-
-    let cancelled = false
-
-    async function loadData() {
-      setLoadingCollections(true)
-      setLoadingSubmissions(true)
-      setDataError(null)
-
-      try {
-        const [collectionsResult, submissionsResult] = await Promise.all([
-          getCollections(),
-          getMySubmissions(),
-        ])
-
-        if (!cancelled) {
-          setCollections(collectionsResult)
-          setSubmissions(submissionsResult)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setDataError(err instanceof Error ? err.message : "Failed to load dashboard data")
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingCollections(false)
-          setLoadingSubmissions(false)
-        }
-      }
-    }
-
     loadData()
-
-    return () => {
-      cancelled = true
-    }
   }, [user])
 
   const openEdit = () => {
@@ -97,6 +87,30 @@ export function ProfilePage() {
       setError(err instanceof Error ? err.message : "Failed to update profile")
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleCreateCollection = async () => {
+    const name = newCollectionName.trim()
+    if (!name) return
+    setCreatingCollection(true)
+    try {
+      const col = await createCollection(name, false)
+      setCollections((prev) => [col, ...prev])
+      setNewCollectionName("")
+    } catch {
+      // ignore
+    } finally {
+      setCreatingCollection(false)
+    }
+  }
+
+  const handleDeleteCollection = async (id: string) => {
+    try {
+      await deleteCollection(id)
+      setCollections((prev) => prev.filter((c) => c.id !== id))
+    } catch {
+      // ignore
     }
   }
 
@@ -188,16 +202,6 @@ export function ProfilePage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Account details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>Keep your profile up to date so teammates can recognize you.</p>
-              <p>Use a clear avatar image for faster identification.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <CardTitle>My workspace</CardTitle>
@@ -205,7 +209,7 @@ export function ProfilePage() {
                   Track your saved collections and submissions.
                 </p>
               </div>
-              <Button onClick={() => navigate("/?submit=true")}>Submit a Tool</Button>
+              <Button onClick={() => navigate("/submit")}>Submit a Tool</Button>
             </CardHeader>
             <CardContent>
               {dataError && (
@@ -218,20 +222,30 @@ export function ProfilePage() {
                 </TabsList>
 
                 <TabsContent value="collections" className="mt-4">
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="New collection name..."
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => void handleCreateCollection()}
+                      disabled={!newCollectionName.trim() || creatingCollection}
+                    >
+                      {creatingCollection ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Plus className="size-4" />
+                      )}
+                      Create
+                    </Button>
+                  </div>
+
                   {loadingCollections ? (
                     <p className="text-sm text-muted-foreground">Loading collections...</p>
                   ) : collections.length === 0 ? (
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>No collections yet.</p>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={() => navigate("/collections")}
-                        className="px-0"
-                      >
-                        Create Collection
-                      </Button>
-                    </div>
+                    <p className="text-sm text-muted-foreground">No collections yet. Create one above.</p>
                   ) : (
                     <div className="grid gap-3">
                       {collections.map((collection) => (
@@ -239,15 +253,28 @@ export function ProfilePage() {
                           key={collection.id}
                           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/10 px-3 py-2"
                         >
-                          <div>
-                            <p className="font-medium">{collection.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {collection.tool_count} tools
-                            </p>
+                          <div className="flex items-center gap-3">
+                            <BookmarkCheck className="size-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{collection.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {collection.tool_count} {collection.tool_count === 1 ? "tool" : "tools"}
+                              </p>
+                            </div>
                           </div>
-                          <Badge variant={collection.is_public ? "secondary" : "outline"}>
-                            {collection.is_public ? "Public" : "Private"}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={collection.is_public ? "secondary" : "outline"}>
+                              {collection.is_public ? "Public" : "Private"}
+                            </Badge>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => void handleDeleteCollection(collection.id)}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -258,7 +285,12 @@ export function ProfilePage() {
                   {loadingSubmissions ? (
                     <p className="text-sm text-muted-foreground">Loading submissions...</p>
                   ) : submissions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No submissions yet.</p>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>No submissions yet.</p>
+                      <Button variant="link" size="sm" onClick={() => navigate("/submit")} className="px-0">
+                        Submit your first tool
+                      </Button>
+                    </div>
                   ) : (
                     <div className="grid gap-3">
                       {submissions.map((submission) => (
@@ -272,7 +304,7 @@ export function ProfilePage() {
                               Submitted {new Date(submission.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <Badge variant={submission.status === "pending" ? "secondary" : "outline"}>
+                          <Badge variant={submission.status === "pending" ? "secondary" : submission.status === "approved" ? "default" : "outline"}>
                             {submission.status}
                           </Badge>
                         </div>
