@@ -57,6 +57,12 @@ final class CollectionService
         return ['deleted' => true];
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function tools(string $collectionId, string $userId): array
+    {
+        return $this->collections->findTools($collectionId, $userId);
+    }
+
     /** @return array{collection?: array, error?: string, status?: int} */
     public function addTool(string $collectionId, string $userId, mixed $toolId): array
     {

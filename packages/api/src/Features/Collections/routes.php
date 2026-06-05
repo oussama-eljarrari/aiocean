@@ -9,5 +9,6 @@ Router::get('/api/collections', [CollectionController::class, 'index']);
 Router::post('/api/collections', [CollectionController::class, 'create']);
 Router::patch('/api/collections/{id}', [CollectionController::class, 'update']);
 Router::delete('/api/collections/{id}', [CollectionController::class, 'delete']);
+Router::get('/api/collections/{id}/tools', [CollectionController::class, 'tools']);
 Router::post('/api/collections/{id}/tools', [CollectionController::class, 'addTool']);
 Router::delete('/api/collections/{id}/tools', [CollectionController::class, 'removeTool']);

@@ -1,4 +1,5 @@
 import { get, post, patch, del } from "./client"
+import type { Tool } from "../schema"
 
 export interface Collection {
   id: string
@@ -30,6 +31,11 @@ export async function deleteCollection(id: string): Promise<void> {
 export async function addToolToCollection(collectionId: string, toolId: string): Promise<Collection> {
   const data = await post<{ collection: Collection }>(`/collections/${collectionId}/tools`, { tool_id: toolId })
   return data.collection
+}
+
+export async function getCollectionTools(collectionId: string): Promise<Tool[]> {
+  const data = await get<{ tools: Tool[] }>(`/collections/${collectionId}/tools`)
+  return data.tools
 }
 
 export async function removeToolFromCollection(collectionId: string, toolId: string): Promise<Collection> {

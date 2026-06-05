@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/use-auth"
 import { updateMe } from "@/shared/api/users"
 import { getCollections, createCollection, deleteCollection, type Collection } from "@/shared/api/collections"
+import { CollectionToolsDialog } from "@/components/CollectionToolsDialog"
 import { getMySubmissions, type Submission } from "@/shared/api/submissions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,8 @@ export function ProfilePage() {
 
   const [newCollectionName, setNewCollectionName] = useState("")
   const [creatingCollection, setCreatingCollection] = useState(false)
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
+  const [collectionToolsOpen, setCollectionToolsOpen] = useState(false)
 
   const loadData = () => {
     if (!user) return
@@ -254,12 +257,17 @@ export function ProfilePage() {
                           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/10 px-3 py-2"
                         >
                           <div className="flex items-center gap-3">
-                            <BookmarkCheck className="size-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{collection.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {collection.tool_count} {collection.tool_count === 1 ? "tool" : "tools"}
-                              </p>
+                            <div
+                              className="flex items-center gap-3 flex-1 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => { setSelectedCollection(collection); setCollectionToolsOpen(true) }}
+                            >
+                              <BookmarkCheck className="size-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">{collection.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {collection.tool_count} {collection.tool_count === 1 ? "tool" : "tools"}
+                                </p>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -317,6 +325,12 @@ export function ProfilePage() {
           </Card>
         </div>
       </div>
+
+      <CollectionToolsDialog
+        open={collectionToolsOpen}
+        onOpenChange={setCollectionToolsOpen}
+        collection={selectedCollection}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">

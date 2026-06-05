@@ -100,6 +100,58 @@ final class CollectionRepository
         return $this->findOwned($collectionId, $userId);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function findTools(string $collectionId, string $userId): array
+    {
+        if (!$this->isOwnedBy($collectionId, $userId)) {
+            return [];
+        }
+
+        $stmt = $this->pdo->prepare("
+            SELECT t.*,
+                   GROUP_CONCAT(c.name) AS categories,
+                   COALESCE(AVG(r.rating), 0) AS avg_rating,
+                   COUNT(DISTINCT r.id) AS review_count,
+                   COUNT(DISTINCT v.id) AS vote_count
+            FROM tools t
+            JOIN collection_tools ct ON ct.tool_id = t.id
+            LEFT JOIN tool_category tc ON tc.tool_id = t.id
+            LEFT JOIN categories c ON c.id = tc.category_id
+            LEFT JOIN reviews r ON r.tool_id = t.id
+            LEFT JOIN votes v ON v.tool_id = t.id
+            WHERE ct.collection_id = ?
+            GROUP BY t.id
+            ORDER BY t.name
+        ");
+        $stmt->execute([$collectionId]);
+
+        return array_map(fn(array $row) => $this->formatTool($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    private function formatTool(array $row): array
+    {
+        $cats = $row['categories'] ?? '';
+        $category = $cats ? explode(',', $cats)[0] : '';
+
+        return [
+            'id'            => $row['id'],
+            'name'          => $row['name'],
+            'logo'          => $row['logo_url'] ?? '',
+            'tagline'       => $row['short_description'] ?? '',
+            'category'      => $category,
+            'pricing'       => $row['pricing_model'] ?? '',
+            'platform'      => 'Web',
+            'usageCount'    => (int) ($row['usage_count'] ?? 0),
+            'rating'        => round((float) ($row['avg_rating'] ?? 0), 1),
+            'reviewCount'   => (int) ($row['review_count'] ?? 0),
+            'voteCount'     => (int) ($row['vote_count'] ?? 0),
+            'primaryUseCase'=> '',
+            'url'           => $row['url'] ?? null,
+            'description'   => $row['description'] ?? null,
+            'status'        => $row['status'] ?? 'inactive',
+        ];
+    }
+
     private function isOwnedBy(string $id, string $userId): bool
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM collections WHERE id = ? AND user_id = ?');

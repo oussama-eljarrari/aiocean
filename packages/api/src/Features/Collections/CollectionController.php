@@ -57,6 +57,16 @@ final class CollectionController extends BaseController
         return $this->result($this->collections->delete((string) $request->param('id'), $userId));
     }
 
+    public function tools(Request $request): Response
+    {
+        $userId = $this->requireUserId();
+        if ($userId === null) {
+            return $this->unauthorized();
+        }
+
+        return $this->data(['tools' => $this->collections->tools((string) $request->param('id'), $userId)]);
+    }
+
     public function addTool(Request $request): Response
     {
         $userId = $this->requireUserId();
