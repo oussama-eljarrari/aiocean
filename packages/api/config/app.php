@@ -28,4 +28,19 @@ return [
     ],
 
     'agent_webhook_url' => $_ENV['AGENT_WEBHOOK_URL'] ?? 'http://localhost:3001/api/agent/review',
+
+    'oauth' => [
+        'issuer'                 => $_ENV['OAUTH_ISSUER']             ?? 'http://localhost:8080',
+        'frontend_url'           => $_ENV['FRONTEND_URL']             ?? 'http://localhost:5173',
+        'resource_server'        => $_ENV['OAUTH_RESOURCE_SERVER']    ?? 'http://localhost:3001/mcp',
+        'private_key_path'       => $_ENV['OAUTH_PRIVATE_KEY_PATH']   ?? dirname(__DIR__) . '/storage/oauth/private.key',
+        'public_key_path'        => $_ENV['OAUTH_PUBLIC_KEY_PATH']    ?? dirname(__DIR__) . '/storage/oauth/public.key',
+        'encryption_key'         => $_ENV['OAUTH_ENCRYPTION_KEY']     ?? 'dev-encryption-key-please-change-32',
+        'auth_code_ttl'          => $_ENV['OAUTH_AUTH_CODE_TTL']      ?? 'PT10M',
+        'access_token_ttl'       => $_ENV['OAUTH_ACCESS_TOKEN_TTL']   ?? 'PT1H',
+        'refresh_token_ttl'      => $_ENV['OAUTH_REFRESH_TOKEN_TTL']  ?? 'P1M',
+        'default_scope'          => $_ENV['OAUTH_DEFAULT_SCOPE']      ?? 'mcp:user',
+        'auto_approve'           => ($_ENV['OAUTH_AUTO_APPROVE']      ?? 'true') === 'true',
+        'internal_shared_secret' => $_ENV['INTERNAL_SHARED_SECRET']   ?? '',
+    ],
 ];

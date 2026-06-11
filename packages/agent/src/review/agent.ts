@@ -1,28 +1,32 @@
 import { generateText, type ModelMessage, stepCountIs, wrapLanguageModel } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { createApiClient } from '../client'
+import { SubmissionData, TodoItem } from '../types'
 import {
-  createAgentRun,
-  updateAgentStatus,
-  updateAgentTodo,
-  saveAgentMessages,
-  saveAgentReport,
-} from './php-client.js'
-import { SubmissionData, TodoItem } from './types.js'
-import { fetchPageTool } from './tools/fetch-page.js'
-import { webSearchTool } from './tools/web-search.js'
-import { createUpdateTodoTool } from './tools/update-todo.js'
-import { createSubmitReportTool } from './tools/submit-report.js'
+  fetchPageTool,
+  webSearchTool,
+  createUpdateTodoTool,
+  createSubmitReportTool,
+} from './tools'
 import { devToolsMiddleware } from "@ai-sdk/devtools";
+import { config } from '../config'
+
 const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: config.openRouterApiKey,
 })
 const model = wrapLanguageModel(
   {
-    model: openrouter('nvidia/nemotron-3-super-120b-a12b:free'),
+
+    model: openrouter('nvidia/nemotron-3-super-120b-a12b:free', {
+      extraBody: {
+        reasoning: {
+          max_tokens: 0,
+        },
+      }
+    }),
     middleware: devToolsMiddleware()
   }
 )
-// const model = openrouter('nvidia/nemotron-3-super-120b-a12b:free')
 
 function formatTodos(todos: TodoItem[]): string {
   return todos.map((t, i) => `${i + 1}. [${t.status}] ${t.content}`).join('\n')
@@ -31,7 +35,8 @@ function formatTodos(todos: TodoItem[]): string {
 export async function runAgentReview(submission: SubmissionData) {
   console.log(`Starting review for submission ${submission.submission_id}`)
 
-  const run = await createAgentRun(submission.submission_id)
+  const client = createApiClient()
+  const run = await client.createAgentRun(submission.submission_id)
   const runId = run?.data?.id
 
   if (!runId) {
@@ -48,20 +53,20 @@ export async function runAgentReview(submission: SubmissionData) {
   ]
 
   let currentTodos = [...initialTodos]
-  await updateAgentTodo(runId, currentTodos)
+  await client.updateAgentTodo(runId, currentTodos)
 
   let report = ''
 
   const tools = {
     search_web: webSearchTool,
     fetch_page: fetchPageTool,
-    update_todo: createUpdateTodoTool(async (todos) => {
+    update_todo: createUpdateTodoTool(async (todos: TodoItem[]) => {
       currentTodos = todos
-      await updateAgentTodo(runId, currentTodos)
+      await client.updateAgentTodo(runId, currentTodos)
     }),
-    submit_report: createSubmitReportTool(async (finalReport) => {
+    submit_report: createSubmitReportTool(async (finalReport: string) => {
       report = finalReport
-      await saveAgentReport(runId, report)
+      await client.saveAgentReport(runId, report)
     })
   }
 
@@ -94,7 +99,9 @@ before u start working and before each step , u need to update the todo list by 
 - **Full Description**: ${submission.description || 'Not provided'}
 - **Pricing Model**: ${submission.pricing_model || 'Not provided'}
 
-Begin by researching the tool. Update the todo list as you progress, and call 'submit_report' when you are finished.`,
+Begin by researching the tool. Update the todo list as you progress, and call 'submit_report' when you are finished.
+call the submit_report tool only when all the steps are completed and done
+`,
     },
   ]
 
@@ -110,7 +117,7 @@ Begin by researching the tool. Update the todo list as you progress, and call 's
       stopWhen: stepCountIs(1),
       onStepFinish: async () => {
         // Save messages at the end of every step
-        await saveAgentMessages(runId, messages)
+        await client.saveAgentMessages(runId, messages)
       },
     })
 
@@ -126,7 +133,7 @@ Begin by researching the tool. Update the todo list as you progress, and call 's
     // Let's only do this if it didn't call any tools at all and just talked.
     if (result.text && result.toolCalls.length === 0 && step > 0) {
       report = result.text
-      await saveAgentReport(runId, report)
+      await client.saveAgentReport(runId, report)
       break
     }
 
@@ -134,14 +141,14 @@ Begin by researching the tool. Update the todo list as you progress, and call 's
   }
 
   // Final persistence saves
-  await saveAgentMessages(runId, messages)
-  await updateAgentTodo(runId, currentTodos)
+  await client.saveAgentMessages(runId, messages)
+  await client.updateAgentTodo(runId, currentTodos)
 
   if (report) {
-    await updateAgentStatus(runId, 'completed')
+    await client.updateAgentStatus(runId, 'completed')
     console.log(`Review completed for submission ${submission.submission_id}`)
   } else {
-    await updateAgentStatus(runId, 'failed')
+    await client.updateAgentStatus(runId, 'failed')
     console.error(`Review failed for submission ${submission.submission_id}. Reached max steps without final report.`)
   }
 }

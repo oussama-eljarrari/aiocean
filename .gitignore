@@ -16,6 +16,8 @@ dist-ssr
 # PHP
 packages/api/vendor/
 packages/api/.env
+packages/api/storage/oauth/private.key
+packages/api/storage/oauth/public.key
 *.cache
 
 # Editor directories and files

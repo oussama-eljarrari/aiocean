@@ -7,7 +7,11 @@ namespace App\Core;
 use App\Core\Middleware\Pipeline;
 use App\Core\Middleware\CorsMiddleware;
 use App\Core\Middleware\SessionMiddleware;
+use App\Core\Middleware\InternalAuthMiddleware;
 use App\Core\Middleware\JsonBodyParser;
+use App\Features\Clicks\ClickController;
+use App\Features\Clicks\ClickRepository;
+use App\Features\Clicks\ClickService;
 use App\Features\Collections\CollectionController;
 use App\Features\Collections\CollectionRepository;
 use App\Features\Collections\CollectionService;
@@ -36,6 +40,14 @@ use App\Features\Users\UserService;
 use App\Features\PasswordReset\PasswordResetController;
 use App\Features\PasswordReset\PasswordResetRepository;
 use App\Features\PasswordReset\PasswordResetService;
+use App\Features\OAuth\AccessTokenRepository as OAuthAccessTokenRepository;
+use App\Features\OAuth\AuthCodeRepository as OAuthAuthCodeRepository;
+use App\Features\OAuth\AuthorizationServerFactory;
+use App\Features\OAuth\ClientRepository as OAuthClientRepository;
+use App\Features\OAuth\OAuthController;
+use App\Features\OAuth\OAuthRepository;
+use App\Features\OAuth\RefreshTokenRepository as OAuthRefreshTokenRepository;
+use App\Features\OAuth\ScopeRepository as OAuthScopeRepository;
 use App\Shared\EmailService;
 use App\Shared\CurrentUser;
 use PDO;
@@ -73,6 +85,7 @@ final class Application
         $corsOrigin = $this->config['cors_origin'] ?? '*';
         $this->pipeline->pipe(new CorsMiddleware($corsOrigin));
         $this->pipeline->pipe(new SessionMiddleware());
+        $this->pipeline->pipe(new InternalAuthMiddleware($this->config['oauth']['internal_shared_secret'] ?? ''));
         $this->pipeline->pipe(new JsonBodyParser());
     }
 
@@ -119,6 +132,9 @@ final class Application
         $reportRepo = new ReportRepository($pdo);
         $reportService = new ReportService($reportRepo, $toolRepo);
 
+        $clickRepo = new ClickRepository($pdo);
+        $clickService = new ClickService($clickRepo, $toolRepo);
+
         $collectionRepo = new CollectionRepository($pdo);
         $collectionService = new CollectionService($collectionRepo, $toolRepo);
 
@@ -135,6 +151,7 @@ final class Application
         $this->controllers[ReviewController::class] = new ReviewController($reviewService, $currentUser);
         $this->controllers[VoteController::class] = new VoteController($voteService, $currentUser);
         $this->controllers[ReportController::class] = new ReportController($reportService, $currentUser);
+        $this->controllers[ClickController::class] = new ClickController($clickService, $currentUser);
         $this->controllers[CollectionController::class] = new CollectionController($collectionService, $currentUser);
         $agentRepo = new AgentRepository($pdo);
         $agentService = new AgentService($agentRepo);
@@ -150,6 +167,32 @@ final class Application
         $this->controllers[PasswordResetController::class] = new PasswordResetController($passwordResetService);
 
         $this->controllers[SubmissionController::class] = new SubmissionController($submissionService, $currentUser);
+
+        $oauthConfig = $this->config['oauth'];
+        $oauthRepo = new OAuthRepository($pdo);
+        $oauthClientRepo = new OAuthClientRepository($oauthRepo);
+        $oauthScopeRepo = new OAuthScopeRepository($oauthRepo, $userRepo);
+        $oauthAccessTokenRepo = new OAuthAccessTokenRepository(
+            $oauthRepo,
+            $oauthConfig['issuer'],
+            $oauthConfig['resource_server'],
+        );
+        $oauthAuthCodeRepo = new OAuthAuthCodeRepository($oauthRepo);
+        $oauthRefreshTokenRepo = new OAuthRefreshTokenRepository($oauthRepo);
+        $authorizationServer = (new AuthorizationServerFactory())->build(
+            $oauthClientRepo,
+            $oauthAccessTokenRepo,
+            $oauthScopeRepo,
+            $oauthAuthCodeRepo,
+            $oauthRefreshTokenRepo,
+            $oauthConfig,
+        );
+        $this->controllers[OAuthController::class] = new OAuthController(
+            $authorizationServer,
+            $oauthRepo,
+            $userService,
+            $oauthConfig,
+        );
     }
 
     /**

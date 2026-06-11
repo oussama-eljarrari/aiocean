@@ -26,6 +26,14 @@ abstract class BaseController
         return (new Response())->json($data, $status);
     }
 
+    protected function html(string $body, int $status = 200): Response
+    {
+        return (new Response())
+            ->status($status)
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->body($body);
+    }
+
     protected function created(mixed $data): Response
     {
         return (new Response())->json($data, 201);

@@ -1,5 +1,5 @@
 import type { Tool, ToolsResponse, GetToolsParams, Category } from "../schema"
-import { get } from "./client"
+import { get, post } from "./client"
 export type { Tool, ToolsResponse, GetToolsParams, Category } from "../schema"
 
 export async function getTools(params: GetToolsParams = {}): Promise<ToolsResponse> {
@@ -19,6 +19,10 @@ export async function getTools(params: GetToolsParams = {}): Promise<ToolsRespon
 
 export async function getTool(id: string): Promise<Tool> {
   return get<Tool>(`/tools/${id}`)
+}
+
+export async function recordClick(toolId: string): Promise<{ clicked: boolean; count: number }> {
+  return post<{ clicked: boolean; count: number }>(`/tools/${toolId}/click`, {})
 }
 
 export async function getCategories(): Promise<Category[]> {

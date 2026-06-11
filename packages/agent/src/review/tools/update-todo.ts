@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import z from 'zod';
-import { TodoItem } from '../types.js';
+import { TodoItem } from '../../types';
 
 export function createUpdateTodoTool(onUpdate: (todos: TodoItem[]) => Promise<void>) {
   return tool({

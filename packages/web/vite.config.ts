@@ -12,8 +12,23 @@ export default defineConfig({
     },
   },
   server: {
+    //temporary for cloudflare tunnel
+    allowedHosts: true,
     proxy: {
       "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/.well-known": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      // moved to /api/oauth
+      "/register": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/token": {
         target: "http://localhost:8080",
         changeOrigin: true,
       },

@@ -12,7 +12,11 @@ import { useAuth } from "@/hooks/use-auth"
 import { useNavigate } from "react-router-dom"
 import { AuthCardLayout } from "./auth-card-layout"
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSuccess?: () => void
+}
+
+export function LoginForm({ onSuccess }: LoginFormProps = {}) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const { login, error } = useAuth()
@@ -22,7 +26,11 @@ export function LoginForm() {
     e.preventDefault()
     try {
       await login(email, password)
-      navigate("/home")
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        navigate("/home")
+      }
     } catch (err) {
       // Error is handled in useAuth and displayed below
     }

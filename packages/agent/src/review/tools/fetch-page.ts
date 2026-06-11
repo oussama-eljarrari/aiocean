@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import z from 'zod';
+import { config } from '../../config';
 
 export const fetchPageTool = tool({
   description: 'Fetch the text content and highlights of a specific URL. Best for reading the tool\'s official website or documentation.',
@@ -7,7 +8,7 @@ export const fetchPageTool = tool({
     url: z.string().describe('The absolute URL to fetch (e.g. https://example.com)'),
   }),
   execute: async ({ url }) => {
-    const EXA_API_KEY = process.env.EXA_API_KEY;
+    const EXA_API_KEY = config.exaApiKey;
     if (!EXA_API_KEY) {
       console.warn("EXA_API_KEY is not set. Returning placeholder.");
       return { url, error: "Configuration Error: EXA_API_KEY is missing." };

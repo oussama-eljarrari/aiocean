@@ -112,13 +112,15 @@ final class CollectionRepository
                    GROUP_CONCAT(c.name) AS categories,
                    COALESCE(AVG(r.rating), 0) AS avg_rating,
                    COUNT(DISTINCT r.id) AS review_count,
-                   COUNT(DISTINCT v.id) AS vote_count
+                   COUNT(DISTINCT v.id) AS vote_count,
+                   COUNT(DISTINCT tcl.user_id) AS click_count
             FROM tools t
             JOIN collection_tools ct ON ct.tool_id = t.id
             LEFT JOIN tool_category tc ON tc.tool_id = t.id
             LEFT JOIN categories c ON c.id = tc.category_id
             LEFT JOIN reviews r ON r.tool_id = t.id
             LEFT JOIN votes v ON v.tool_id = t.id
+            LEFT JOIN tool_clicks tcl ON tcl.tool_id = t.id
             WHERE ct.collection_id = ?
             GROUP BY t.id
             ORDER BY t.name
@@ -141,7 +143,7 @@ final class CollectionRepository
             'category'      => $category,
             'pricing'       => $row['pricing_model'] ?? '',
             'platform'      => 'Web',
-            'usageCount'    => (int) ($row['usage_count'] ?? 0),
+            'usageCount'    => (int) ($row['click_count'] ?? $row['usage_count'] ?? 0),
             'rating'        => round((float) ($row['avg_rating'] ?? 0), 1),
             'reviewCount'   => (int) ($row['review_count'] ?? 0),
             'voteCount'     => (int) ($row['vote_count'] ?? 0),

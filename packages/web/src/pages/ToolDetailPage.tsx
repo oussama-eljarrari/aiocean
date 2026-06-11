@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { useEffect, useState } from "react"
 import type { Tool } from "@/shared/schema"
-import { getTool } from "@/shared/api/tools"
+import { getTool, recordClick } from "@/shared/api/tools"
 import { toggleVote } from "@/shared/api/votes"
 import { getReviews, type Review } from "@/shared/api/reviews"
 import { ChevronUp, Star, Bookmark, Loader2, ExternalLink } from "lucide-react"
@@ -26,6 +26,7 @@ export function ToolDetailPage() {
   const [voteCount, setVoteCount] = useState(0)
   const [hasUpvoted, setHasUpvoted] = useState(false)
   const [voting, setVoting] = useState(false)
+  const [usageCount, setUsageCount] = useState(0)
 
   const [reviews, setReviews] = useState<Review[]>([])
   const [loadingReviews, setLoadingReviews] = useState(true)
@@ -45,6 +46,7 @@ export function ToolDetailPage() {
         if (!cancelled) {
           setTool(t)
           setVoteCount(t.voteCount)
+          setUsageCount(t.usageCount)
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load tool")
@@ -76,6 +78,15 @@ export function ToolDetailPage() {
     load()
     return () => { cancelled = true }
   }, [id])
+
+  const handleVisitWebsite = () => {
+    if (!tool?.url) return
+    window.open(tool.url, "_blank", "noopener noreferrer")
+    if (!user) return
+    recordClick(tool.id)
+      .then((result) => setUsageCount(result.count))
+      .catch(() => {})
+  }
 
   const handleUpvote = async () => {
     if (!user) {
@@ -152,7 +163,7 @@ export function ToolDetailPage() {
             <Button
               size="lg"
               className="w-full md:w-auto font-semibold"
-              onClick={() => window.open(tool.url!, "_blank", "noopener noreferrer")}
+              onClick={() => void handleVisitWebsite()}
             >
               <ExternalLink className="mr-2 size-4" />
               Visit Website
@@ -282,7 +293,7 @@ export function ToolDetailPage() {
                </div>
                <div className="flex justify-between items-center">
                  <span className="text-sm text-muted-foreground">Users</span>
-                 <span className="font-semibold">{formatCount(tool.usageCount)}</span>
+                  <span className="font-semibold">{formatCount(usageCount)}</span>
                </div>
                <div className="flex justify-between items-center">
                  <span className="text-sm text-muted-foreground">Pricing</span>
