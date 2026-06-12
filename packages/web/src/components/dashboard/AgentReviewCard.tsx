@@ -356,7 +356,7 @@ export function AgentReviewCard({
           onReject={onReject}
           onChangesRequested={onChangesRequested}
           onUpdateNotes={onUpdateNotes}
-          disableChangesRequest={agentRuns.length >= 3}
+          disableChangesRequest={submission.revision_count >= submission.max_revisions}
         />
       </div>
     </div>
@@ -480,7 +480,7 @@ function DecisionSidebar({
                 Maximum Revisions Reached
               </p>
               <p className="mt-0.5 text-[10.5px] text-muted-foreground leading-normal">
-                The submitter has resubmitted 3 times. You must now make a final decision to approve or reject.
+                The submitter has resubmitted {submission.max_revisions} times. You must now make a final decision to approve or reject.
               </p>
             </div>
           )}
