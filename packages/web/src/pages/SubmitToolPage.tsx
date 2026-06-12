@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -83,11 +83,16 @@ export function SubmitToolPage() {
     return null
   }
 
+  const submittingRef = useRef(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
     setError(null)
     if (!name.trim() || !shortDescription.trim()) {
       setError("Name and short description are required")
+      submittingRef.current = false
       return
     }
     setSubmitting(true)
@@ -109,6 +114,7 @@ export function SubmitToolPage() {
       setSubmitted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit tool")
+      submittingRef.current = false
     } finally {
       setSubmitting(false)
     }

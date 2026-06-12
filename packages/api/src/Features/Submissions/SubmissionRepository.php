@@ -150,7 +150,7 @@ final class SubmissionRepository
 
         $stmt = $this->pdo->prepare('
             UPDATE submissions
-            SET status = \'pending\', revision_count = revision_count + 1, updated_at = datetime(\'now\')
+            SET status = \'pending\', admin_notes = NULL, revision_count = revision_count + 1, updated_at = datetime(\'now\')
             WHERE id = ?
         ');
         $stmt->execute([$submissionId]);
