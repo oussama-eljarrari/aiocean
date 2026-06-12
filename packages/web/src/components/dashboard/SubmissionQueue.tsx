@@ -41,11 +41,12 @@ export function SubmissionQueue({
       </div>
 
       <Tabs value={filter} onValueChange={(value) => onFilterChange(value as SubmissionFilter)} className="mb-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto w-full gap-1 p-1">
+          <TabsTrigger value="all" className="flex-1 min-w-[45px] text-xs py-1.5">All</TabsTrigger>
+          <TabsTrigger value="pending" className="flex-1 min-w-[65px] text-xs py-1.5">Pending</TabsTrigger>
+          <TabsTrigger value="approved" className="flex-1 min-w-[65px] text-xs py-1.5">Approved</TabsTrigger>
+          <TabsTrigger value="rejected" className="flex-1 min-w-[65px] text-xs py-1.5">Rejected</TabsTrigger>
+          <TabsTrigger value="changes_requested" className="flex-1 min-w-[110px] text-xs py-1.5">Changes Requested</TabsTrigger>
         </TabsList>
       </Tabs>
 

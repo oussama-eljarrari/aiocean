@@ -19,9 +19,15 @@ export interface AgentJob {
   completed_at: string | null
   created_at: string
   updated_at: string
+  tool_snapshot?: Record<string, any> | null
 }
 
 export async function getAgentRunForSubmission(submissionId: string): Promise<AgentJob> {
   const data = await get<{ agent_job: AgentJob }>(`/admin/agent/runs/${submissionId}`)
   return data.agent_job
+}
+
+export async function getAgentHistoryForSubmission(submissionId: string): Promise<AgentJob[]> {
+  const data = await get<{ agent_runs: AgentJob[] }>(`/admin/agent/runs/${submissionId}/history`)
+  return data.agent_runs
 }
