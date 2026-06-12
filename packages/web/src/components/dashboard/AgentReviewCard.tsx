@@ -357,6 +357,7 @@ export function AgentReviewCard({
           onChangesRequested={onChangesRequested}
           onUpdateNotes={onUpdateNotes}
           disableChangesRequest={submission.revision_count >= submission.max_revisions}
+          maxRevisions={submission.max_revisions}
         />
       </div>
     </div>
@@ -417,6 +418,7 @@ function DecisionSidebar({
   onChangesRequested,
   onUpdateNotes,
   disableChangesRequest,
+  maxRevisions,
 }: {
   adminNotes: string
   isDeciding: "approved" | "rejected" | "changes_requested" | null
@@ -425,6 +427,7 @@ function DecisionSidebar({
   onChangesRequested: () => void
   onUpdateNotes: (value: string) => void
   disableChangesRequest: boolean
+  maxRevisions: number
 }) {
   return (
     <div className="sticky top-1/10 flex flex-col gap-4 rounded-xl border bg-card shadow-sm">
@@ -480,7 +483,7 @@ function DecisionSidebar({
                 Maximum Revisions Reached
               </p>
               <p className="mt-0.5 text-[10.5px] text-muted-foreground leading-normal">
-                The submitter has resubmitted {submission.max_revisions} times. You must now make a final decision to approve or reject.
+                The submitter has resubmitted {maxRevisions} times. You must now make a final decision to approve or reject.
               </p>
             </div>
           )}
