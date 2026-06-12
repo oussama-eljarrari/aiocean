@@ -1,10 +1,4 @@
-import {
-  createAgentRun,
-  updateAgentStatus,
-  updateAgentTodo,
-  saveAgentMessages,
-  saveAgentReport,
-} from '../src/client'
+import { createApiClient } from '../src/client'
 import { TodoItem } from '../src/types'
 
 // Helper function to pause execution
@@ -65,9 +59,11 @@ async function runMockAgent() {
     console.log(`✅ Using provided submission ID: ${submissionId}`)
   }
 
+  const client = createApiClient()
+
   // 2. Create the run
   console.log(`🚀 Creating agent run in the database for submission ${submissionId}...`)
-  const run = await createAgentRun(submissionId)
+  const run = await client.createAgentRun(submissionId)
   const runId = run?.data?.id
 
   if (!runId) {
@@ -87,7 +83,7 @@ async function runMockAgent() {
 
   // Initialize checklist in the database
   console.log('📋 Initializing checklist in database...')
-  await updateAgentTodo(runId, todos)
+  await client.updateAgentTodo(runId, todos)
 
   const messageStream: any[] = [
     {
@@ -102,7 +98,7 @@ async function runMockAgent() {
     
     // Set active item status to 'in_progress'
     todos[stepIdx].status = 'in_progress'
-    await updateAgentTodo(runId, todos)
+    await client.updateAgentTodo(runId, todos)
 
     // Save a mock update_todo tool call so the UI parses the step transition
     messageStream.push({
@@ -117,7 +113,7 @@ async function runMockAgent() {
         }
       ]
     })
-    await saveAgentMessages(runId, messageStream)
+    await client.saveAgentMessages(runId, messageStream)
 
     const logs = stepThoughts[stepIdx]
 
@@ -135,13 +131,13 @@ async function runMockAgent() {
           }
         ]
       })
-      await saveAgentMessages(runId, messageStream)
+      await client.saveAgentMessages(runId, messageStream)
     }
 
     // Set item status to 'completed'
     await delay(400)
     todos[stepIdx].status = 'completed'
-    await updateAgentTodo(runId, todos)
+    await client.updateAgentTodo(runId, todos)
     console.log(`✅ Completed Step ${stepIdx + 1}`)
   }
 
@@ -177,10 +173,10 @@ Admin approval is recommended.`
       }
     ]
   })
-  await saveAgentMessages(runId, messageStream)
+  await client.saveAgentMessages(runId, messageStream)
 
-  await saveAgentReport(runId, finalReport)
-  await updateAgentStatus(runId, 'completed')
+  await client.saveAgentReport(runId, finalReport)
+  await client.updateAgentStatus(runId, 'completed')
 
   console.log('\n🎉 Mock Agent Run Completed Successfully!')
   console.log(`View the results in your dashboard under Submission ID: ${submissionId}`)

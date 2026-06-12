@@ -26,6 +26,20 @@ final class SubmissionController extends BaseController
         return $this->result($this->submissions->submit($userId, $request->body()), 201);
     }
 
+    public function resubmit(Request $request): Response
+    {
+        $userId = $this->currentUser->id();
+        if ($userId === null) {
+            return $this->unauthorized();
+        }
+
+        return $this->result($this->submissions->resubmit(
+            (string) $request->param('id'),
+            $userId,
+            $request->body()
+        ));
+    }
+
     public function mine(Request $request): Response
     {
         $userId = $this->currentUser->id();
@@ -57,6 +71,15 @@ final class SubmissionController extends BaseController
             $body['status'] ?? null,
             $body['admin_notes'] ?? null,
         ));
+    }
+
+    public function show(Request $request): Response
+    {
+        if (!$this->currentUser->isAdmin()) {
+            return $this->forbidden();
+        }
+
+        return $this->result($this->submissions->getSingleAdmin((string) $request->param('id')));
     }
 
     private function result(array $result, int $successStatus = 200): Response

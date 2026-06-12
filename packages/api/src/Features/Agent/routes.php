@@ -14,3 +14,4 @@ Router::patch('/api/agent/runs/{id}/report', [AgentController::class, 'saveRepor
 
 // Admin endpoint
 Router::get('/api/admin/agent/runs/{submissionId}', [AgentController::class, 'showForSubmission']);
+Router::get('/api/admin/agent/runs/{submissionId}/history', [AgentController::class, 'historyForSubmission']);

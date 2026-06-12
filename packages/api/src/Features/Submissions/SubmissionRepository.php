@@ -56,7 +56,7 @@ final class SubmissionRepository
                    t.url AS tool_website, t.short_description AS tool_short_description,
                    t.description AS tool_description, t.pricing_model AS tool_pricing,
                    c.name AS tool_category,
-                   u.name AS submitter_name, u.email AS submitter_email
+                   u.name AS submitter_name, u.email AS submitter_email, u.pfp_url AS submitter_pfp_url
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
             LEFT JOIN tool_category tc ON tc.tool_id = t.id
@@ -78,7 +78,7 @@ final class SubmissionRepository
                    t.url AS tool_website, t.short_description AS tool_short_description,
                    t.description AS tool_description, t.pricing_model AS tool_pricing,
                    c.name AS tool_category,
-                   u.name AS submitter_name, u.email AS submitter_email
+                   u.name AS submitter_name, u.email AS submitter_email, u.pfp_url AS submitter_pfp_url
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
             LEFT JOIN tool_category tc ON tc.tool_id = t.id
@@ -122,6 +122,40 @@ final class SubmissionRepository
         return $this->findById($id);
     }
 
+    public function resubmit(string $submissionId, string $toolId, array $data): void
+    {
+        $stmt = $this->pdo->prepare('
+            UPDATE tools
+            SET name = ?, url = ?, short_description = ?, description = ?, pricing_model = ?, updated_at = datetime(\'now\')
+            WHERE id = ?
+        ');
+        $stmt->execute([
+            $data['name'],
+            $data['url'] ?? null,
+            $data['short_description'],
+            $data['description'] ?? null,
+            $data['pricing_model'] ?? null,
+            $toolId,
+        ]);
+
+        if (array_key_exists('category_id', $data)) {
+            $stmt = $this->pdo->prepare('DELETE FROM tool_category WHERE tool_id = ?');
+            $stmt->execute([$toolId]);
+
+            if ($data['category_id'] !== null) {
+                $stmt = $this->pdo->prepare('INSERT OR IGNORE INTO tool_category (tool_id, category_id) VALUES (?, ?)');
+                $stmt->execute([$toolId, $data['category_id']]);
+            }
+        }
+
+        $stmt = $this->pdo->prepare('
+            UPDATE submissions
+            SET status = \'pending\', admin_notes = NULL, revision_count = revision_count + 1, updated_at = datetime(\'now\')
+            WHERE id = ?
+        ');
+        $stmt->execute([$submissionId]);
+    }
+
     public function findById(string $id): ?array
     {
         $stmt = $this->pdo->prepare('
@@ -129,7 +163,7 @@ final class SubmissionRepository
                    t.url AS tool_website, t.short_description AS tool_short_description,
                    t.description AS tool_description, t.pricing_model AS tool_pricing,
                    c.name AS tool_category,
-                   u.name AS submitter_name, u.email AS submitter_email
+                   u.name AS submitter_name, u.email AS submitter_email, u.pfp_url AS submitter_pfp_url
             FROM submissions s
             JOIN tools t ON t.id = s.tool_id
             LEFT JOIN tool_category tc ON tc.tool_id = t.id
@@ -178,8 +212,11 @@ final class SubmissionRepository
             'submitted_by' => $row['submitted_by'],
             'submitter_name' => $row['submitter_name'] ?? null,
             'submitter_email' => $row['submitter_email'] ?? null,
+            'submitter_pfp_url' => $row['submitter_pfp_url'] ?? null,
             'status' => $row['status'],
             'admin_notes' => $row['admin_notes'],
+            'revision_count' => (int) ($row['revision_count'] ?? 0),
+            'max_revisions' => (int) ($row['max_revisions'] ?? 3),
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at'],
         ];

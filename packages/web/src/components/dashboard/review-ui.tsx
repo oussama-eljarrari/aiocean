@@ -5,12 +5,13 @@ import { cn } from "@/lib/utils"
 import type { AgentJob, AgentTodoItem } from "@/shared/api/agent"
 import type { Submission } from "@/shared/api/submissions"
 
-export type SubmissionFilter = "all" | "pending" | "approved" | "rejected"
+export type SubmissionFilter = "all" | "pending" | "approved" | "rejected" | "changes_requested"
 
 export const submissionStatusLabels: Record<Submission["status"], string> = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+  changes_requested: "Changes Requested",
 }
 
 export const agentStatusLabels: Record<AgentJob["status"], string> = {
@@ -43,6 +44,8 @@ export function statusClass(status: Submission["status"] | AgentJob["status"] | 
     case "running":
     case "in_progress":
       return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300"
+    case "changes_requested":
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
     default:
       return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
   }

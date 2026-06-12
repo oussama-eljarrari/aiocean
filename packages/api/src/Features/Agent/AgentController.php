@@ -22,12 +22,13 @@ final class AgentController extends BaseController
     {
         $body = $request->body();
         $submissionId = $body['submission_id'] ?? '';
+        $toolSnapshot = $body['tool_snapshot'] ?? null;
 
         if ($submissionId === '') {
             return $this->badRequest('submission_id is required');
         }
 
-        return $this->created(['data' => $this->agent->create($submissionId)]);
+        return $this->created(['data' => $this->agent->create($submissionId, $toolSnapshot)]);
     }
 
     public function updateStatus(Request $request): Response
@@ -56,9 +57,11 @@ final class AgentController extends BaseController
 
     public function saveReport(Request $request): Response
     {
+        $body = $request->body();
         return $this->result($this->agent->saveReport(
             (string) $request->param('id'),
-            (string) ($request->body()['report'] ?? ''),
+            (string) ($body['report'] ?? ''),
+            $body['structured_data'] ?? null,
         ));
     }
 
@@ -67,6 +70,15 @@ final class AgentController extends BaseController
     public function showForSubmission(Request $request): Response
     {
         $result = $this->agent->findBySubmissionId(
+            (string) $request->param('submissionId'),
+        );
+
+        return $this->result($result);
+    }
+
+    public function historyForSubmission(Request $request): Response
+    {
+        $result = $this->agent->findAllBySubmissionId(
             (string) $request->param('submissionId'),
         );
 

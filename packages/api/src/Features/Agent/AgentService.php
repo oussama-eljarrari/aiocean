@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace App\Features\Agent;
 
+use App\Features\Submissions\SubmissionService;
+use App\Features\Settings\SettingsRepository;
+
 final class AgentService
 {
     private const VALID_STATUSES = ['running', 'completed', 'failed'];
 
     public function __construct(
         private AgentRepository $agent,
+        private SubmissionService $submissions,
+        private SettingsRepository $settings,
     ) {}
 
-    public function create(string $submissionId): array
+    public function create(string $submissionId, ?string $toolSnapshot = null): array
     {
-        return $this->agent->create($submissionId);
+        return $this->agent->create($submissionId, $toolSnapshot);
     }
 
     public function updateStatus(string $id, string $status): array
@@ -22,10 +27,8 @@ final class AgentService
         if (!in_array($status, self::VALID_STATUSES, true)) {
             return ['error' => 'Status must be running, completed, or failed', 'status' => 400];
         }
-
         $this->agent->updateStatus($id, $status);
         $job = $this->agent->findById($id);
-
         return $job ? ['agent_job' => $job] : ['error' => 'Agent job not found', 'status' => 404];
     }
 
@@ -33,7 +36,6 @@ final class AgentService
     {
         $this->agent->updateTodo($id, json_encode($todos));
         $job = $this->agent->findById($id);
-
         return $job ? ['agent_job' => $job] : ['error' => 'Agent job not found', 'status' => 404];
     }
 
@@ -43,11 +45,23 @@ final class AgentService
         return ['status' => 'ok'];
     }
 
-    public function saveReport(string $id, string $report): array
+    public function saveReport(string $id, string $report, ?array $structuredData = null): array
     {
-        $this->agent->updateReport($id, $report);
+        $structuredDataJson = $structuredData !== null ? json_encode($structuredData) : null;
+        $this->agent->updateReport($id, $report, $structuredDataJson);
         $job = $this->agent->findById($id);
 
+        if ($job !== null && $structuredData !== null) {
+            $autoDecide = $this->settings->get('agent_auto_request_changes', 'false') === 'true';
+            if ($autoDecide) {
+                $requiresChanges = (bool) ($structuredData['requires_changes'] ?? false);
+                $feedback = trim((string) ($structuredData['feedback'] ?? ''));
+
+                if ($requiresChanges && $feedback !== '') {
+                    $this->submissions->decide($job['submission_id'], 'changes_requested', $feedback);
+                }
+            }
+        }
         return $job ? ['agent_job' => $job] : ['error' => 'Agent job not found', 'status' => 404];
     }
 
@@ -60,5 +74,10 @@ final class AgentService
         }
 
         return ['agent_job' => $job];
+    }
+
+    public function findAllBySubmissionId(string $submissionId): array
+    {
+        return ['agent_runs' => $this->agent->findAllBySubmissionId($submissionId)];
     }
 }

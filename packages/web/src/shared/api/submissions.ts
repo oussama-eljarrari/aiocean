@@ -13,8 +13,11 @@ export interface Submission {
   submitted_by: string
   submitter_name: string | null
   submitter_email: string | null
-  status: "pending" | "approved" | "rejected"
+  submitter_pfp_url: string | null
+  status: "pending" | "approved" | "rejected" | "changes_requested"
   admin_notes: string | null
+  revision_count: number
+  max_revisions: number
   created_at: string
   updated_at: string
 }
@@ -33,6 +36,11 @@ export async function submitTool(payload: SubmitPayload): Promise<Submission> {
   return data.submission
 }
 
+export async function resubmitTool(id: string, payload: SubmitPayload): Promise<Submission> {
+  const data = await post<{ submission: Submission }>(`/submissions/${id}/resubmit`, payload)
+  return data.submission
+}
+
 export async function getMySubmissions(): Promise<Submission[]> {
   const data = await get<{ submissions: Submission[] }>("/submissions/mine")
   return data.submissions
@@ -44,7 +52,16 @@ export async function getAdminSubmissions(status?: string): Promise<Submission[]
   return data.submissions
 }
 
-export async function decideSubmission(id: string, status: "approved" | "rejected", adminNotes?: string): Promise<Submission> {
+export async function getAdminSubmission(id: string): Promise<Submission> {
+  const data = await get<{ submission: Submission }>(`/admin/submissions/${id}`)
+  return data.submission
+}
+
+export async function decideSubmission(
+  id: string,
+  status: "approved" | "rejected" | "changes_requested",
+  adminNotes?: string
+): Promise<Submission> {
   const data = await patch<{ submission: Submission }>(`/admin/submissions/${id}`, { status, admin_notes: adminNotes })
   return data.submission
 }

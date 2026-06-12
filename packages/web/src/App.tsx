@@ -6,6 +6,7 @@ import { HomePage } from "./pages/HomePage"
 import { LandingPage } from "./pages/LandingPage"
 import { LoginPage } from "./pages/LoginPage"
 import { DashboardPage } from "./pages/DashboardPage"
+import { SubmissionDetailPage } from "./pages/SubmissionDetailPage"
 import { AdminPage } from "./pages/AdminPage"
 import { ToolDetailPage } from "./pages/ToolDetailPage"
 import { SignUpPage } from "./pages/SignUp"
@@ -69,6 +70,12 @@ export function App() {
             <Route path="/dashboard" element={
               <AdminRoute>
                 <DashboardPage />
+              </AdminRoute>
+            } />
+
+            <Route path="/dashboard/submissions/:id" element={
+              <AdminRoute>
+                <SubmissionDetailPage />
               </AdminRoute>
             } />
 

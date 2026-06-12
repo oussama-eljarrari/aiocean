@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import type { AgentJob } from "@/shared/api/agent"
-import { getAgentRunForSubmission } from "@/shared/api/agent"
+import { getAgentHistoryForSubmission } from "@/shared/api/agent"
 import { decideSubmission, getAdminSubmissions, type Submission } from "@/shared/api/submissions"
 import type { SubmissionFilter } from "@/components/dashboard/review-ui"
 
@@ -12,12 +12,13 @@ export function useAdminDashboard() {
   const [filter, setFilter] = useState<SubmissionFilter>("all")
   
   const [agentJob, setAgentJob] = useState<AgentJob | null>(null)
+  const [agentRuns, setAgentRuns] = useState<AgentJob[]>([])
   const [agentError, setAgentError] = useState<string | null>(null)
   const [adminNotes, setAdminNotes] = useState("")
   
   const [isLoading, setIsLoading] = useState(true)
   const [isAgentLoading, setIsAgentLoading] = useState(false)
-  const [isDeciding, setIsDeciding] = useState<"approved" | "rejected" | null>(null)
+  const [isDeciding, setIsDeciding] = useState<"approved" | "rejected" | "changes_requested" | null>(null)
   const [pageError, setPageError] = useState<string | null>(null)
 
   const selectedSubmission = useMemo(
@@ -56,9 +57,11 @@ export function useAdminDashboard() {
     if (!options.quiet) setIsAgentLoading(true)
     setAgentError(null)
     try {
-      const run = await getAgentRunForSubmission(submissionId)
-      setAgentJob(run)
+      const runs = await getAgentHistoryForSubmission(submissionId)
+      setAgentRuns(runs)
+      setAgentJob(runs.length > 0 ? runs[runs.length - 1] : null)
     } catch (error) {
+      setAgentRuns([])
       setAgentJob(null)
       setAgentError(error instanceof Error ? error.message : "No agent run found")
     } finally {
@@ -71,7 +74,7 @@ export function useAdminDashboard() {
     await loadAgentRun(selectedSubmissionId)
   }, [loadAgentRun, selectedSubmissionId])
 
-  const decide = useCallback(async (status: "approved" | "rejected") => {
+  const decide = useCallback(async (status: "approved" | "rejected" | "changes_requested") => {
     if (!selectedSubmission) return
     setIsDeciding(status)
     setPageError(null)
@@ -83,7 +86,11 @@ export function useAdminDashboard() {
       setAdminNotes(updated.admin_notes ?? "")
       
       const emailNote = updated.submitter_email ? `Email sent to ${updated.submitter_email}` : "No email for submitter"
-      toast.success(`Submission ${status === "approved" ? "Approved" : "Rejected"}`, {
+      let toastTitle = "Submission Approved"
+      if (status === "rejected") toastTitle = "Submission Rejected"
+      else if (status === "changes_requested") toastTitle = "Changes Requested"
+
+      toast.success(toastTitle, {
         description: emailNote,
         action: {
           label: "View Tool",
@@ -133,6 +140,7 @@ export function useAdminDashboard() {
     onFilterChange: setFilter,
     onSelectSubmission: setSelectedId,
     agentJob,
+    agentRuns,
     agentError,
     adminNotes,
     onUpdateNotes: setAdminNotes,

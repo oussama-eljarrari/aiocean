@@ -64,6 +64,15 @@ final class EmailService
         );
     }
 
+    public function sendChangesRequested(string $toEmail, string $toName, string $toolName, string $reason, string $prefilledUrl): void
+    {
+        $this->send(
+            to:      $toEmail,
+            subject: "Action required: Changes requested for {$toolName}",
+            html:    $this->changesRequestedHtml($toName, $toolName, $reason, $prefilledUrl),
+        );
+    }
+
     // -------------------------------------------------------------------------
     // Private
     // -------------------------------------------------------------------------
@@ -78,8 +87,14 @@ final class EmailService
         ]);
     }
 
+    private function esc(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
     private function welcomeHtml(string $name): string
     {
+        $name = $this->esc($name);
         return "
             <p>Hi {$name},</p>
             <p>Welcome to AI Ocean — the community-powered discovery space for AI tools.</p>
@@ -101,6 +116,8 @@ final class EmailService
 
     private function submissionReceivedHtml(string $name, string $toolName): string
     {
+        $name = $this->esc($name);
+        $toolName = $this->esc($toolName);
         return "
             <p>Hi {$name},</p>
             <p>We received your submission for <strong>{$toolName}</strong> and it's now in our review queue.</p>
@@ -111,6 +128,8 @@ final class EmailService
 
     private function submissionApprovedHtml(string $name, string $toolName): string
     {
+        $name = $this->esc($name);
+        $toolName = $this->esc($toolName);
         return "
             <p>Hi {$name},</p>
             <p>Great news — <strong>{$toolName}</strong> has been approved and is now live on AI Ocean.</p>
@@ -120,11 +139,31 @@ final class EmailService
 
     private function submissionRejectedHtml(string $name, string $toolName, string $reason): string
     {
+        $name = $this->esc($name);
+        $toolName = $this->esc($toolName);
+        $reason = $this->esc($reason);
         return "
             <p>Hi {$name},</p>
             <p>Unfortunately, <strong>{$toolName}</strong> was not approved at this time.</p>
             <p><strong>Reason:</strong> {$reason}</p>
             <p>You're welcome to revise and resubmit.</p>
+            <p>The AI Ocean team</p>
+        ";
+    }
+
+    private function changesRequestedHtml(string $name, string $toolName, string $reason, string $prefilledUrl): string
+    {
+        $name = $this->esc($name);
+        $toolName = $this->esc($toolName);
+        $reason = $this->esc($reason);
+        $prefilledUrl = $this->esc($prefilledUrl);
+        return "
+            <p>Hi {$name},</p>
+            <p>Our team has reviewed your submission for <strong>{$toolName}</strong>, and we need some updates before it can be approved.</p>
+            <p><strong>Feedback:</strong> {$reason}</p>
+            <p>Please click the link below to edit your submission with your previous data prefilled:</p>
+            <p><a href=\"{$prefilledUrl}\">Edit & Resubmit Tool Details</a></p>
+            <p>Alternatively, you can access it via your submissions dashboard.</p>
             <p>The AI Ocean team</p>
         ";
     }

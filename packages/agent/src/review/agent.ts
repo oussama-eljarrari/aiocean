@@ -36,7 +36,8 @@ export async function runAgentReview(submission: SubmissionData) {
   console.log(`Starting review for submission ${submission.submission_id}`)
 
   const client = createApiClient()
-  const run = await client.createAgentRun(submission.submission_id)
+  const { submission_id, ...snapshotData } = submission
+  const run = await client.createAgentRun(submission_id, snapshotData)
   const runId = run?.data?.id
 
   if (!runId) {
@@ -56,6 +57,7 @@ export async function runAgentReview(submission: SubmissionData) {
   await client.updateAgentTodo(runId, currentTodos)
 
   let report = ''
+  let structuredData: Record<string, unknown> | undefined = undefined
 
   const tools = {
     search_web: webSearchTool,
@@ -64,9 +66,10 @@ export async function runAgentReview(submission: SubmissionData) {
       currentTodos = todos
       await client.updateAgentTodo(runId, currentTodos)
     }),
-    submit_report: createSubmitReportTool(async (finalReport: string) => {
+    submit_report: createSubmitReportTool(async (finalReport: string, finalStructuredData?: { requires_changes: boolean; feedback: string }) => {
       report = finalReport
-      await client.saveAgentReport(runId, report)
+      structuredData = finalStructuredData
+      await client.saveAgentReport(runId, report, structuredData)
     })
   }
 
@@ -80,11 +83,50 @@ Process Overview:
 4. Do not skip steps. Verify the tool exists, check its functionality, and validate pricing if available.
 5. When all steps are complete, call 'submit_report' to submit your final markdown evaluation.
 
+Structured Review Requirements:
+When calling the 'submit_report' tool:
+- If you find major discrepancies, broken/invalid links, mismatching pricing models, or incomplete information that requires the user to correct the form, set 'structured_data' parameter with 'requires_changes: true' and provide detailed 'feedback' explaining exactly what the user needs to fix.
+- Otherwise, if the submission appears valid or has only minor issues that do not require form updates, set 'requires_changes: false' and an empty 'feedback' string.
+
 Initial Todo List:
 ${formatTodos(initialTodos)}
 
 before u start working and before each step , u need to update the todo list by calling the update_todo tool , this crucially helps the admin understand what are u doing
 `
+
+  const history = await client.getAgentHistory(submission.submission_id)
+  const previousRuns = (history ?? []).filter((run: any) => run.id !== runId && run.status === 'completed')
+
+  let previousContextText = ""
+  if (previousRuns.length > 0) {
+    previousContextText = `\n\n### Re-Review / Revision Context (Round ${previousRuns.length + 1})
+This is a re-review. The user has updated the submission to address issues found in previous rounds.
+
+Here are the reports of the previous verification runs for context:
+`
+    previousRuns.forEach((run: any, idx: number) => {
+      previousContextText += `
+---
+#### Previous Run #${idx + 1}
+- **Report**: 
+${run.report || 'No report submitted'}
+`
+      if (run.tool_snapshot) {
+        previousContextText += `- **Analyzed Snapshot Fields**: ${JSON.stringify(run.tool_snapshot)}\n`
+      }
+    })
+    previousContextText += `---
+
+Please carefully review the updated details and verify if the issues mentioned in previous runs have been resolved. Focus on checking the website and other resources to verify the updates.
+
+### CRITICAL RESOURCE OPTIMIZATION:
+Compare the current Submission Details against the 'Analyzed Snapshot Fields' of the most recent previous run (Run #${previousRuns.length}).
+If all submitted values (Name, URL, Short Description, Full Description, Pricing Model) are identical to the previous snapshot, it means the user resubmitted the form without making any corrections or updates.
+In this case, to avoid wasting resources (tokens, search queries, etc.), you MUST:
+1. Skip all web searches and page fetches.
+2. Immediately call the 'update_todo' tool to mark unresolved tasks as cancelled.
+3. Immediately call the 'submit_report' tool with 'structured_data' set to 'requires_changes: true' and 'feedback: "No updates were provided to address the requested changes. Please correct the fields before resubmitting."'`
+  }
 
   const messages: ModelMessage[] = [
     {
@@ -97,7 +139,7 @@ before u start working and before each step , u need to update the todo list by 
 - **URL**: ${submission.url || 'Not provided'}
 - **Short Description**: ${submission.short_description}
 - **Full Description**: ${submission.description || 'Not provided'}
-- **Pricing Model**: ${submission.pricing_model || 'Not provided'}
+- **Pricing Model**: ${submission.pricing_model || 'Not provided'}${previousContextText}
 
 Begin by researching the tool. Update the todo list as you progress, and call 'submit_report' when you are finished.
 call the submit_report tool only when all the steps are completed and done

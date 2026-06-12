@@ -33,6 +33,8 @@ use App\Features\Tools\ToolService;
 use App\Features\Votes\VoteController;
 use App\Features\Votes\VoteRepository;
 use App\Features\Votes\VoteService;
+use App\Features\Settings\SettingsController;
+use App\Features\Settings\SettingsRepository;
 
 use App\Features\Users\UserController;
 use App\Features\Users\UserRepository;
@@ -144,6 +146,7 @@ final class Application
             $userRepo,
             $emailService,
             $this->config['agent_webhook_url'] ?? '',
+            $this->config['oauth']['frontend_url'] ?? 'http://localhost:5173',
         );
 
         $this->controllers[ToolController::class] = new ToolController($toolService);
@@ -153,8 +156,11 @@ final class Application
         $this->controllers[ReportController::class] = new ReportController($reportService, $currentUser);
         $this->controllers[ClickController::class] = new ClickController($clickService, $currentUser);
         $this->controllers[CollectionController::class] = new CollectionController($collectionService, $currentUser);
+        $settingsRepo = new SettingsRepository($pdo);
+        $this->controllers[SettingsController::class] = new SettingsController($settingsRepo, $currentUser);
+
         $agentRepo = new AgentRepository($pdo);
-        $agentService = new AgentService($agentRepo);
+        $agentService = new AgentService($agentRepo, $submissionService, $settingsRepo);
 
         $this->controllers[AgentController::class] = new AgentController($agentService, $currentUser);
         $passwordResetRepo = new PasswordResetRepository($pdo);

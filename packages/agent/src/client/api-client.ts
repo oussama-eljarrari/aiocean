@@ -167,10 +167,13 @@ export function createApiClient(options: ApiClientOptions = {}) {
     },
 
     // Runs endpoints
-    async createAgentRun(submissionId: string) {
+    async createAgentRun(submissionId: string, toolSnapshot?: Record<string, unknown>) {
       return apiFetch<{ data: { id: string } }>('/api/agent/runs', {
         method: 'POST',
-        body: JSON.stringify({ submission_id: submissionId }),
+        body: JSON.stringify({
+          submission_id: submissionId,
+          tool_snapshot: toolSnapshot ? JSON.stringify(toolSnapshot) : null,
+        }),
       })
     },
 
@@ -195,11 +198,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
       })
     },
 
-    async saveAgentReport(runId: string, report: string) {
+    async saveAgentReport(runId: string, report: string, structuredData?: Record<string, unknown>) {
       return apiFetch(`/api/agent/runs/${runId}/report`, {
         method: 'PATCH',
-        body: JSON.stringify({ report }),
+        body: JSON.stringify({ report, structured_data: structuredData || null }),
       })
+    },
+
+    async getAgentHistory(submissionId: string) {
+      const result = await apiFetch<{ data: { agent_runs: any[] } }>(`/api/admin/agent/runs/${encodeURIComponent(submissionId)}/history`)
+      return result?.data?.agent_runs ?? null
     }
   }
 }

@@ -304,17 +304,38 @@ export function ProfilePage() {
                       {submissions.map((submission) => (
                         <div
                           key={submission.id}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/10 px-3 py-2"
+                          className="flex flex-col gap-2 rounded-lg border bg-muted/10 p-3"
                         >
-                          <div>
-                            <p className="font-medium">{submission.tool_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Submitted {new Date(submission.created_at).toLocaleDateString()}
-                            </p>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium">{submission.tool_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Submitted {new Date(submission.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge className={
+                              submission.status === "pending" ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300" :
+                              submission.status === "approved" ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300" :
+                              submission.status === "changes_requested" ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300" :
+                              "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                            } variant="outline">
+                              {submission.status === "changes_requested" ? "Changes Requested" : submission.status}
+                            </Badge>
                           </div>
-                          <Badge variant={submission.status === "pending" ? "secondary" : submission.status === "approved" ? "default" : "outline"}>
-                            {submission.status}
-                          </Badge>
+                          
+                          {submission.status === "changes_requested" && (
+                            <div className="w-full mt-2 border-t pt-2 text-sm text-foreground/90">
+                              <p className="font-semibold text-orange-700 dark:text-orange-400">Feedback from review:</p>
+                              <p className="mt-1 bg-orange-50/50 dark:bg-orange-950/20 p-2.5 rounded border border-orange-100 dark:border-orange-900/50 italic text-muted-foreground">
+                                {submission.admin_notes || "Please check submission details and update."}
+                              </p>
+                              <div className="mt-3 flex justify-end">
+                                <Button size="sm" onClick={() => navigate(`/submit?id=${submission.id}`)} className="bg-orange-600 hover:bg-orange-700 text-white gap-1">
+                                  Edit & Resubmit
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
