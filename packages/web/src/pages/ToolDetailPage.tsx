@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useNavigate } from "react-router-dom"
 import { SaveToCollectionDialog } from "@/components/SaveToCollectionDialog"
 import { ReviewDialog } from "@/components/ReviewDialog"
+import { ToolLogo } from "@/components/ToolLogo"
 
 export function ToolDetailPage() {
   const { id } = useParams()
@@ -144,9 +145,7 @@ export function ToolDetailPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="flex items-center gap-6">
-          <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-muted text-5xl border shadow-sm">
-            {tool.logo}
-          </div>
+          <ToolLogo name={tool.name} logo={tool.logo} url={tool.url} className="size-24 rounded-2xl text-5xl" imgClassName="p-2" />
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">{tool.name}</h1>
             <p className="mt-2 text-lg text-muted-foreground">{tool.tagline}</p>
@@ -278,11 +277,21 @@ export function ToolDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="flex justify-between items-center">
-                 <span className="text-sm text-muted-foreground">Rating</span>
+                 <span className="text-sm text-muted-foreground">Community rating</span>
                  <span className="font-semibold flex items-center gap-1.5">
-                   {tool.rating.toFixed(1)} <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                   {tool.rating.toFixed(1)} <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
                  </span>
                </div>
+               {tool.externalRating != null && (
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-muted-foreground">
+                     Official rating{tool.externalRatingSource ? ` · ${tool.externalRatingSource}` : ""}
+                   </span>
+                   <span className="font-semibold flex items-center gap-1.5">
+                     {tool.externalRating.toFixed(1)} <Star className="h-4 w-4 fill-sky-400 text-sky-500" />
+                   </span>
+                 </div>
+               )}
                <div className="flex justify-between items-center">
                  <span className="text-sm text-muted-foreground">Reviews</span>
                  <span className="font-semibold">{tool.reviewCount}</span>

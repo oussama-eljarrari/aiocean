@@ -135,6 +135,24 @@ final class ToolRepository implements ToolRepositoryInterface, ToolLookupInterfa
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function updateExternalRating(string $id, float $rating, int $count, string $source, ?string $slug = null): void
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE tools
+            SET external_rating = ?, external_rating_count = ?, external_rating_source = ?,
+                producthunt_slug = COALESCE(?, producthunt_slug), updated_at = datetime('now')
+            WHERE id = ?
+        ");
+        $stmt->execute([$rating, $count, $source, $slug, $id]);
+    }
+
+    /** @return array<int, array{id: string, name: string, slug: string, producthunt_slug: ?string}> */
+    public function allForRatingRefresh(): array
+    {
+        $stmt = $this->pdo->query("SELECT id, name, slug, producthunt_slug FROM tools WHERE status = 'active'");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     private function hydrate(array $row): Tool
     {
         $cats = $row['categories'] ?? '';
@@ -156,6 +174,9 @@ final class ToolRepository implements ToolRepositoryInterface, ToolLookupInterfa
             url:            $row['url'] ?? null,
             description:    $row['description'] ?? null,
             status:         $row['status'] ?? 'inactive',
+            externalRating:       isset($row['external_rating']) ? round((float) $row['external_rating'], 1) : null,
+            externalRatingCount:  isset($row['external_rating_count']) ? (int) $row['external_rating_count'] : null,
+            externalRatingSource: $row['external_rating_source'] ?? null,
         );
     }
 }

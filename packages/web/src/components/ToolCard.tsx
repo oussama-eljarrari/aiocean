@@ -6,9 +6,11 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ChevronUp } from "lucide-react"
+import { ChevronUp } from "lucide-react"
 import { Link } from "react-router-dom"
 import type { Tool } from "../shared/schema"
+import { ToolLogo } from "./ToolLogo"
+import { ToolRatings } from "./ToolRatings"
 
 interface ToolCardProps {
   tool: Tool
@@ -38,16 +40,20 @@ export function ToolCard({ tool }: ToolCardProps) {
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-            <div className="flex size-12 items-center justify-center rounded-lg border bg-muted text-2xl shadow-sm">
-              {tool.logo}
-            </div>
+            <ToolLogo name={tool.name} logo={tool.logo} url={tool.url} className="size-12 rounded-lg text-2xl" />
             <div>
               <CardTitle className="text-lg">{tool.name}</CardTitle>
-              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                <Star className="size-3.5 fill-amber-400 text-amber-500" />
-                <span>{tool.rating.toFixed(1)}</span>
-                <span className="mx-1">•</span>
-                <span>Used by {formatUsage(tool.usageCount)}</span>
+              <div className="mt-1 space-y-1">
+                <ToolRatings
+                  rating={tool.rating}
+                  reviewCount={tool.reviewCount}
+                  externalRating={tool.externalRating}
+                  externalRatingCount={tool.externalRatingCount}
+                  externalRatingSource={tool.externalRatingSource}
+                />
+                <div className="text-xs font-medium text-muted-foreground">
+                  Used by {formatUsage(tool.usageCount)}
+                </div>
               </div>
             </div>
           </div>

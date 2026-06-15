@@ -14,6 +14,9 @@ export interface Tool {
   url?: string | null
   description?: string | null
   status?: string
+  externalRating?: number | null
+  externalRatingCount?: number | null
+  externalRatingSource?: string | null
 }
 
 export interface User {

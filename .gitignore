@@ -30,6 +30,7 @@ packages/api/storage/oauth/public.key
 *.njsproj
 *.sln
 *.sw?
+*.pem
 
 # Ignore large untracked/auto-generated files
 models.json

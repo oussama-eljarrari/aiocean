@@ -27,6 +27,9 @@ final class Tool
         public readonly ?string $url = null,
         public readonly ?string $description = null,
         public readonly string $status = 'active',
+        public readonly ?float  $externalRating = null,
+        public readonly ?int    $externalRatingCount = null,
+        public readonly ?string $externalRatingSource = null,
     ) {}
 
     public function toArray(): array
@@ -47,6 +50,9 @@ final class Tool
             'url'           => $this->url,
             'description'   => $this->description,
             'status'        => $this->status,
+            'externalRating'       => $this->externalRating,
+            'externalRatingCount'  => $this->externalRatingCount,
+            'externalRatingSource' => $this->externalRatingSource,
         ];
     }
 }

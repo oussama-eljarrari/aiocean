@@ -29,6 +29,11 @@ return [
 
     'agent_webhook_url' => $_ENV['AGENT_WEBHOOK_URL'] ?? 'http://localhost:3001/api/agent/review',
 
+    'producthunt' => [
+        'client_id'     => $_ENV['PRODUCTHUNT_CLIENT_ID']     ?? '',
+        'client_secret' => $_ENV['PRODUCTHUNT_CLIENT_SECRET'] ?? '',
+    ],
+
     'oauth' => [
         'issuer'                 => $_ENV['OAUTH_ISSUER']             ?? 'http://localhost:8080',
         'frontend_url'           => $_ENV['FRONTEND_URL']             ?? 'http://localhost:5173',
